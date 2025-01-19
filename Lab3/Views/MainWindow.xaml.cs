@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Windows;
 using System.Collections.Generic;
+using System.Windows;
 using Lab3.Models;
 using Lab3.Services;
 
@@ -9,77 +9,67 @@ namespace Lab3.Views
     public partial class MainWindow : Window
     {
         private Lexer _lexer;
-        private IdentifierTable _idTable;
-        private ConstantTable _constTable;
 
         public MainWindow()
         {
             InitializeComponent();
-
             _lexer = new Lexer();
-            _idTable = new IdentifierTable();
-            _constTable = new ConstantTable();
         }
 
         private void AnalyzeButton_Click(object sender, RoutedEventArgs e)
         {
             ResultTextBox.Clear();
-            string code = SourceTextBox.Text;
 
-            // 1) Лексический анализ
-            List<Token> tokens = _lexer.Analyze(code);
-            // (при необходимости, присваиваем Index для var/const):
-            foreach (var t in tokens)
+            string code = SourceTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(code))
             {
-                if (t.Type == TokenType.Var)
-                {
-                    t.Index = _idTable.AddIdentifier(t.Lexeme);
-                }
-                else if (t.Type == TokenType.Const)
-                {
-                    t.Index = _constTable.AddConstant(t.Lexeme);
-                }
-            }
-
-            // 2) Синтаксический анализ (рекурсивный спуск + ПОЛИЗ)
-            var parser = new Parser(tokens, _idTable, _constTable);
-            bool ok = parser.ParseWhileStatement();
-            if (!ok)
-            {
-                ResultTextBox.Text = "Синтаксический анализ завершился с ошибками.\n";
+                ResultTextBox.Text = "Введите исходный код.";
                 return;
             }
 
-            // 3) Получаем ПОЛИЗ
-            IReadOnlyList<PostfixEntry> postfix = parser.GetPostfix();
+            // 1) Лексический анализ
+            List<Token> tokens = _lexer.Analyze(code);
 
-            // 4) Выводим результат
-            ResultTextBox.Text = "Синтаксический анализ прошёл успешно!\nПОЛИЗ:\n";
+            ResultTextBox.Text = "=== Лексемы ===\n";
+            foreach (var t in tokens)
+            {
+                ResultTextBox.Text += t.ToString() + "\n";
+            }
 
+            // 2) Синтаксический анализ => ПОЛИЗ
+            var parser = new Parser(tokens);
+            bool ok = parser.ParseProgram();
+            if (!ok)
+            {
+                ResultTextBox.Text += "\nСинтаксический анализ завершился с ошибками.\n(См. вывод в консоли).";
+                return;
+            }
+
+            // Получаем ПОЛИЗ
+            var postfix = parser.GetPostfix();
+
+            // Выводим ПОЛИЗ
+            ResultTextBox.Text += "\n=== ПОЛИЗ ===\n";
             for (int i = 0; i < postfix.Count; i++)
             {
-                var entry = postfix[i];
-                ResultTextBox.Text += $"{i}\t";
-                switch (entry.type)
+                var pe = postfix[i];
+                ResultTextBox.Text += $"{i}: ";
+                switch (pe.type)
                 {
                     case EEntryType.etCmd:
-                        // entry.index - код команды (ECmd)
-                        ECmd cmd = (ECmd)entry.index;
-                        ResultTextBox.Text += cmd.ToString();
+                        {
+                            ECmd cmd = (ECmd)pe.index;
+                            ResultTextBox.Text += cmd.ToString();
+                        }
                         break;
-
                     case EEntryType.etVar:
-                        string varName = _idTable.GetIdentifier(entry.index);
-                        ResultTextBox.Text += $"Var({varName})";
+                        ResultTextBox.Text += $"etVar({pe.index})";
                         break;
-
                     case EEntryType.etConst:
-                        string cstName = _constTable.GetConstant(entry.index);
-                        ResultTextBox.Text += $"Const({cstName})";
+                        ResultTextBox.Text += $"etConst({pe.index})";
                         break;
-
                     case EEntryType.etCmdPtr:
-                        ResultTextBox.Text += $"CmdPtr({entry.index})";
+                        ResultTextBox.Text += $"etCmdPtr({pe.index})";
                         break;
                 }
                 ResultTextBox.Text += "\n";

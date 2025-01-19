@@ -9,128 +9,207 @@ namespace Lab3.Services
         private readonly List<Token> _tokens;
         private int _pos;
 
-        // Таблицы (если нужны):
-        private IdentifierTable _idTable;
-        private ConstantTable _constTable;
-
-        // ПОЛИЗ
+        // Список PostfixEntry (ПОЛИЗ)
         private List<PostfixEntry> _postfix = new List<PostfixEntry>();
 
-        public Parser(List<Token> tokens, IdentifierTable idTable, ConstantTable constTable)
+        public Parser(List<Token> tokens)
         {
             _tokens = tokens;
             _pos = 0;
-            _idTable = idTable;
-            _constTable = constTable;
         }
 
-        // Доступ к текущей лексеме
-        private Token Current => _pos < _tokens.Count ? _tokens[_pos] : null;
+        private Token Current => (_pos < _tokens.Count) ? _tokens[_pos] : null;
 
         private bool Error(string msg)
         {
-            if (Current != null)
-                Console.WriteLine($"Ошибка: {msg} (pos {Current.Position}, lexeme '{Current.Lexeme}')");
-            else
-                Console.WriteLine($"Ошибка: {msg} (конец лексем)");
+            Console.WriteLine($"Ошибка: {msg}, near='{Current?.Lexeme}', pos={Current?.Position}");
             return false;
         }
 
-        private void NextToken() { if (_pos < _tokens.Count) _pos++; }
+        private void NextToken()
+        {
+            if (_pos < _tokens.Count) _pos++;
+        }
 
-        // Методы записи в ПОЛИЗ
+        // Методы записи
         private int WriteCmd(ECmd cmd)
         {
-            int pos = _postfix.Count;
+            int idx = _postfix.Count;
             _postfix.Add(new PostfixEntry(EEntryType.etCmd, (int)cmd));
-            return pos;
+            return idx;
         }
 
         private int WriteVar(int varIndex)
         {
-            int pos = _postfix.Count;
+            int idx = _postfix.Count;
             _postfix.Add(new PostfixEntry(EEntryType.etVar, varIndex));
-            return pos;
+            return idx;
         }
 
-        private int WriteConst(int constIndex)
+        private int WriteConst(int cIndex)
         {
-            int pos = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etConst, constIndex));
-            return pos;
+            int idx = _postfix.Count;
+            _postfix.Add(new PostfixEntry(EEntryType.etConst, cIndex));
+            return idx;
         }
 
-        private int WriteCmdPtr(int ptrValue)
+        private int WriteCmdPtr(int val)
         {
-            int pos = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, ptrValue));
-            return pos;
+            int idx = _postfix.Count;
+            _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, val));
+            return idx;
         }
 
-        private void SetCmdPtr(int atIndex, int ptrValue)
+        private void SetCmdPtr(int atIndex, int newVal)
         {
-            PostfixEntry entry = _postfix[atIndex];
-            entry.index = ptrValue;
-            _postfix[atIndex] = entry;
+            PostfixEntry e = _postfix[atIndex];
+            e.index = newVal;
+            _postfix[atIndex] = e;
         }
 
-        public bool ParseWhileStatement()
+        //=== Парсим 1 оператор/конструкцию ===
+        public bool ParseProgram()
         {
-            // Пример: <WhileStatement> → while <Condition> do <Statement> end
-            // Генерация ПОЛИЗа:
-            //   <условие>  [инд_адр_JZ] JZ   <Statement> [инд_адр_старта] JMP
-            //   (потом подставляем реальные адреса)
-
-            int startIndex = _postfix.Count; // адрес начала цикла
-
-            // 1) while
-            if (Current == null || Current.Type != TokenType.While)
-                return Error("Ожидался 'while'");
-            NextToken();
-
-            // 2) <Condition>
-            if (!ParseCondition()) return false;
-
-            // Запишем фиктивный адрес для JZ
-            int jzPtrIndex = WriteCmdPtr(-1);
-            // Запишем команду JZ
-            WriteCmd(ECmd.JZ);
-
-            // 3) do
-            if (Current == null || Current.Type != TokenType.Do)
-                return Error("Ожидался 'do'");
-            NextToken();
-
-            // 4) <Statement>
             if (!ParseStatement()) return false;
 
-            // 5) end
-            if (Current == null || Current.Type != TokenType.End)
-                return Error("Ожидался 'end'");
-            NextToken();
-
-            // Запишем адрес начала цикла (startIndex)
-            WriteCmdPtr(startIndex);
-            // Запишем команду JMP
-            int jmpPos = WriteCmd(ECmd.JMP);
-
-            // Теперь подставим корректный адрес для JZ
-            // Переход должен вестись на jmpPos+1 (т. е. на ячейку, куда пойдёт исполнение после JMP)
-            SetCmdPtr(jzPtrIndex, jmpPos + 1);
-
-            // Если остались лексемы
             if (_pos < _tokens.Count)
             {
-                return Error("Лишние символы после 'end'");
+                Console.WriteLine("Предупреждение: есть лишние лексемы после оператора");
             }
             return true;
         }
 
+        private bool ParseStatement()
+        {
+            // опред: while, do, var, ...
+            if (Current == null) return Error("Ожидался оператор.");
+
+            if (Current.Type == TokenType.While)
+                return ParseWhileStatement();
+            else if (Current.Type == TokenType.Do)
+                return ParseDoUntilStatement();
+            else if (Current.Type == TokenType.Var)
+                return ParseAssignStatement();
+            else
+                return Error($"Неизвестный оператор '{Current.Lexeme}'");
+        }
+
+        private bool ParseOperators()
+        {
+            if (!ParseStatement()) return false;
+            return true; // упрощённо
+        }
+
+        //=== while <Condition> do <Operators> end
+        private bool ParseWhileStatement()
+        {
+            if (Current == null || Current.Type != TokenType.While)
+                return Error("Ожидался 'while'");
+            NextToken();
+
+            int startPos = _postfix.Count;
+
+            // <Condition>
+            if (!ParseCondition()) return false;
+
+            // Записать cmdPtr(-1) + JZ
+            int jzPtrIndex = WriteCmdPtr(-1);
+            WriteCmd(ECmd.JZ);
+
+            // do
+            if (Current == null || Current.Type != TokenType.Do)
+                return Error("Ожидался 'do'");
+            NextToken();
+
+            // тело
+            if (!ParseOperators()) return false;
+
+            // end
+            if (Current == null || Current.Type != TokenType.End)
+                return Error("Ожидался 'end'");
+            NextToken();
+
+            // JMP start
+            WriteCmdPtr(startPos);
+            int jmpPos = WriteCmd(ECmd.JMP);
+
+            // fix jz => jmpPos+1
+            SetCmdPtr(jzPtrIndex, jmpPos + 1);
+
+            return true;
+        }
+
+        //=== do until <Condition> <operators> loop
+        private bool ParseDoUntilStatement()
+        {
+            // do
+            if (Current == null || Current.Type != TokenType.Do)
+                return Error("Ожидался 'do'");
+            NextToken();
+
+            // until
+            if (Current == null || Current.Type != TokenType.Until)
+                return Error("Ожидался 'until'");
+            NextToken();
+
+            int startPos = _postfix.Count;
+
+            // <Condition>
+            if (!ParseCondition()) return false;
+
+            // NOT
+            WriteCmd(ECmd.NOT);
+
+            // JZ
+            int jzPtrIndex = WriteCmdPtr(-1);
+            WriteCmd(ECmd.JZ);
+
+            // operators
+            if (!ParseOperators()) return false;
+
+            // loop
+            if (Current == null || Current.Type != TokenType.Loop)
+                return Error("Ожидался 'loop'");
+            NextToken();
+
+            // JMP start
+            WriteCmdPtr(startPos);
+            int jmpPos = WriteCmd(ECmd.JMP);
+
+            // fix jz
+            SetCmdPtr(jzPtrIndex, jmpPos + 1);
+
+            return true;
+        }
+
+        //=== Присваивание: var as <ArithExpr>
+        private bool ParseAssignStatement()
+        {
+            if (Current == null || Current.Type != TokenType.Var)
+                return Error("Ожидался идентификатор");
+            int vIndex = Current.Index;
+            NextToken();
+
+            if (Current == null || Current.Type != TokenType.As)
+                return Error("Ожидался '='");
+            NextToken();
+
+            // слева
+            WriteVar(vIndex);
+
+            // парсим выражение
+            if (!ParseArithExpr()) return false;
+
+            // SET
+            WriteCmd(ECmd.SET);
+
+            return true;
+        }
+
+        //=== <Condition> -> <LogExpr> { or <LogExpr> }
         private bool ParseCondition()
         {
-            // <Condition> → <LogExpr> { or <LogExpr> }
             if (!ParseLogExpr()) return false;
-
             while (Current != null && Current.Type == TokenType.Or)
             {
                 NextToken();
@@ -140,11 +219,10 @@ namespace Lab3.Services
             return true;
         }
 
+        //=== <LogExpr> -> <RelExpr> { and <RelExpr> }
         private bool ParseLogExpr()
         {
-            // <LogExpr> → <RelExpr> { and <RelExpr> }
             if (!ParseRelExpr()) return false;
-
             while (Current != null && Current.Type == TokenType.And)
             {
                 NextToken();
@@ -154,23 +232,38 @@ namespace Lab3.Services
             return true;
         }
 
+        //=== <RelExpr> -> <ArithExpr> [ rel <ArithExpr> ]
         private bool ParseRelExpr()
         {
-            // <RelExpr> → <Operand> [rel <Operand>]
-            if (!ParseOperand()) return false;
+            if (!ParseArithExpr()) return false;
 
             if (Current != null && Current.Type == TokenType.Rel)
             {
-                // Определяем, какая операция сравнения
-                ECmd cmd = ECmd.CMPE; // default
-                switch (Current.Index)
+                ECmd cmd = ECmd.CMPE;
+                switch (Current.Lexeme)
                 {
-                    case 5: cmd = ECmd.CMPL; break;  // <  (пример по таблице)
-                    case 6: cmd = ECmd.CMPLE; break;  // <=
-                    case 7: cmd = ECmd.CMPNE; break;  // <>
-                    case 8: cmd = ECmd.CMPE; break;  // ==
-                                                     // ... если есть ещё ...
+                    case "<": cmd = ECmd.CMPL; break;
+                    case "<=": cmd = ECmd.CMPLE; break;
+                    case "==": cmd = ECmd.CMPE; break;
+                    case "<>": cmd = ECmd.CMPNE; break;
                 }
+                NextToken();
+
+                if (!ParseArithExpr()) return false;
+                WriteCmd(cmd);
+            }
+            return true;
+        }
+
+        //=== <ArithExpr> -> <Operand> { Ao <Operand> }
+        private bool ParseArithExpr()
+        {
+            if (!ParseOperand()) return false;
+
+            while (Current != null && Current.Type == TokenType.Ao)
+            {
+                ECmd cmd = ECmd.ADD;
+                if (Current.Lexeme == "-") cmd = ECmd.SUB;
                 NextToken();
 
                 if (!ParseOperand()) return false;
@@ -181,18 +274,19 @@ namespace Lab3.Services
 
         private bool ParseOperand()
         {
+            // <Operand> -> var | const
             if (Current == null)
                 return Error("Ожидался операнд");
 
             if (Current.Type == TokenType.Var)
             {
-                WriteVar(Current.Index); // index в таблице идентификаторов
+                WriteVar(Current.Index);
                 NextToken();
                 return true;
             }
             else if (Current.Type == TokenType.Const)
             {
-                WriteConst(Current.Index); // index в таблице констант
+                WriteConst(Current.Index);
                 NextToken();
                 return true;
             }
@@ -202,51 +296,6 @@ namespace Lab3.Services
             }
         }
 
-        private bool ParseStatement()
-        {
-            // <Statement> → var as <ArithExpr>
-            if (Current == null || Current.Type != TokenType.Var)
-                return Error("Ожидался идентификатор (var)");
-            // Ставим var в ПОЛИЗ (кому присваиваем)
-            WriteVar(Current.Index);
-            NextToken();
-
-            // as
-            if (Current == null || Current.Type != TokenType.As)
-                return Error("Ожидалась операция 'as'");
-            NextToken();
-
-            // <ArithExpr>
-            if (!ParseArithExpr()) return false;
-
-            // в конце ставим команду SET
-            WriteCmd(ECmd.SET);
-
-            return true;
-        }
-
-        private bool ParseArithExpr()
-        {
-            // <ArithExpr> → <Operand> { ao <Operand> }
-            if (!ParseOperand()) return false;
-
-            while (Current != null && Current.Type == TokenType.Ao)
-            {
-                // Нужно определить, ADD или SUB (или MUL, DIV...)
-                ECmd cmd = ECmd.ADD; // default
-                // По Index лексемы определяем, что за символ (например, + или -)
-                // Допустим + имеет index=10, - =11 (как в примере)
-                if (Current.Index == 11)
-                    cmd = ECmd.SUB;
-                NextToken();
-
-                if (!ParseOperand()) return false;
-                WriteCmd(cmd);
-            }
-            return true;
-        }
-
-        // Позволяем извне получить результат
         public IReadOnlyList<PostfixEntry> GetPostfix() => _postfix;
     }
 }

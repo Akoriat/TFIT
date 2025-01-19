@@ -1,21 +1,32 @@
 ﻿namespace Lab3.Models
 {
+    /// <summary>
+    /// Типы лексем (например, while, do, end, until, loop, and, or, rel, as (=), ao (+/-), var, const, unknown).
+    /// </summary>
     public enum TokenType
     {
-        // Пример: ключевые слова
-        While, Do, End,
-        And, Or, Not, Until, Loop, Output,
+        // Циклы
+        While,
+        Do,
+        End,
+        Until,
+        Loop,
 
-        // Операции
-        Rel,  // <, >, =, <>
-        As,   // присваивание
-        Ao,   // +, - или * , /
+        // Логические
+        And,
+        Or,
+        Rel,  // <, <=, ==, <>
 
-        // Идентификаторы / Константы
+        // Присваивание
+        As,   // '='
+
+        // Арифметика
+        Ao,   // +, -
+
+        // Идентификаторы, Константы
         Var,
         Const,
 
-        // Прочее
         Unknown
     }
 }

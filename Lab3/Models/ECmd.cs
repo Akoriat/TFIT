@@ -1,24 +1,31 @@
 ﻿namespace Lab3.Models
 {
     /// <summary>
-    /// Перечисление для команд постфиксной записи, например:
-    /// ADD, SUB, SET, JZ, JMP, AND, OR, CMPL, CMPE, ...
+    /// Набор команд (операций) ПОЛИЗа, соответствующих
+    /// JMP, JZ, SET, ADD, SUB, AND, OR, NOT, CMPE, CMPNE, CMPL, CMPLE, ...
     /// </summary>
     public enum ECmd
     {
+        // Переходы
         JMP,
         JZ,
+
+        // Присваивание
         SET,
+
+        // Арифметика
         ADD,
         SUB,
+
+        // Логика
         AND,
         OR,
-        CMPE,
-        CMPNE,
-        CMPL,
-        CMPLE,
-        // если нужно:
-        MUL,      // или ADD/SUB/MUL/DIV (если захотите)
-        // ...
+        NOT,
+
+        // Сравнения
+        CMPE,   // ==
+        CMPNE,  // <>
+        CMPL,   // <
+        CMPLE   // <=
     }
 }
