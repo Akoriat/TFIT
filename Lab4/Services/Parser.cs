@@ -9,11 +9,9 @@ namespace Lab4.Services
         private readonly List<Token> _tokens;
         private int _pos;
 
-        // Таблицы (для var/const)
         private IdentifierTable _idTable;
         private ConstantTable _constTable;
 
-        // ПОЛИЗ
         private List<PostfixEntry> _postfix = new List<PostfixEntry>();
 
         public Parser(List<Token> tokens, IdentifierTable idTable, ConstantTable cTable)
@@ -26,10 +24,9 @@ namespace Lab4.Services
 
         private Token Current => _pos < _tokens.Count ? _tokens[_pos] : null;
 
-        private bool Error(string message)
+        private bool Error(string msg)
         {
-            // Можно выводить в консоль или бросать Exception
-            Console.WriteLine($"Ошибка: {message} (pos={Current?.Position}, lex='{Current?.Lexeme}')");
+            Console.WriteLine($"Ошибка: {msg} (pos={Current?.Position}, lex='{Current?.Lexeme}')");
             return false;
         }
 
@@ -49,6 +46,10 @@ namespace Lab4.Services
             return idx;
         }
 
+        /// <summary>
+        /// Записываем переменную (индекс) для левой части присваивания
+        /// (в интерпретаторе это case etVar => push index).
+        /// </summary>
         private int WriteVar(int varIndex)
         {
             int idx = _postfix.Count;
@@ -56,17 +57,23 @@ namespace Lab4.Services
             return idx;
         }
 
-        private int WriteConst(int constIndex)
+        /// <summary>
+        /// Записываем константу
+        /// </summary>
+        private int WriteConst(int cIndex)
         {
             int idx = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etConst, constIndex));
+            _postfix.Add(new PostfixEntry(EEntryType.etConst, cIndex));
             return idx;
         }
 
-        private int WriteCmdPtr(int ptrVal)
+        /// <summary>
+        /// Записываем адрес (число) для переходов/LOAD
+        /// </summary>
+        private int WriteCmdPtr(int val)
         {
             int idx = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, ptrVal));
+            _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, val));
             return idx;
         }
 
@@ -78,28 +85,81 @@ namespace Lab4.Services
         }
 
         //------------------------------------------------------------------------
-        // Точка входа
+        // НОВЫЙ метод: WriteLoadVar(varIndex)
+        // -> генерируем (LOAD), (CmdPtr(varIndex))
         //------------------------------------------------------------------------
-        // В вашем случае вы можете вызвать ParseStatement() из MainWindow.xaml.cs
-        // или сделать отдельный ParseProgram(), который парсит последовательность
-        // операторов, или конкретно while/doUntil. Ниже - пример для одного оператора:
-
-        public bool ParseWhileStatement() // <-- Существовал метод, не меняем
+        private int WriteLoadVar(int varIndex)
         {
-            // <WhileStatement> → while <Condition> do <Statement> end
+            // 1) etCmd(LOAD)
+            int loadPos = _postfix.Count;
+            _postfix.Add(new PostfixEntry(EEntryType.etCmd, (int)ECmd.LOAD));
 
+            // 2) etCmdPtr(varIndex)
+            int ptrPos = _postfix.Count;
+            _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, varIndex));
+
+            return loadPos;
+        }
+
+        //------------------------------------------------------------------------
+        // Главная точка входа
+        //------------------------------------------------------------------------
+        public bool ParseProgram()
+        {
+            // Для простоты: парсим 1 оператор 
+            if (!ParseStatement()) return false;
+
+            // Если хотим много операторов - можно цикл while ...
+            if (_pos < _tokens.Count)
+            {
+                Console.WriteLine("Предупреждение: есть лишние лексемы после первого оператора");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Определяем, какой оператор: while/do/присваивание
+        /// </summary>
+        private bool ParseStatement()
+        {
+            if (Current == null)
+                return Error("Ожидался оператор, но вход закончился");
+
+            if (Current.Type == TokenType.While)
+            {
+                return ParseWhileStatement();
+            }
+            else if (Current.Type == TokenType.Do)
+            {
+                return ParseDoUntilStatement();
+            }
+            else if (Current.Type == TokenType.Var)
+            {
+                // присваивание
+                return ParseAssignStatement();
+            }
+            else
+            {
+                return Error($"Неизвестный оператор: {Current.Lexeme}");
+            }
+        }
+
+        //------------------------------------------------------------------------
+        // while <Condition> do <Statement> end
+        //------------------------------------------------------------------------
+        public bool ParseWhileStatement()
+        {
             if (Current == null || Current.Type != TokenType.While)
                 return Error("Ожидался 'while'");
             NextToken();
 
-            int startPos = _postfix.Count; // начало цикла
+            int startPos = _postfix.Count;
 
             // <Condition>
             if (!ParseCondition()) return false;
 
-            // запишем фиктивный адрес
+            // вставляем JZ
             int jzPtrIndex = WriteCmdPtr(-1);
-            // команда JZ
             WriteCmd(ECmd.JZ);
 
             // do
@@ -107,8 +167,7 @@ namespace Lab4.Services
                 return Error("Ожидался 'do'");
             NextToken();
 
-            // <Statement> (или <Operators>)
-            // Если хотим несколько операторов - можно вызвать ParseOperators()
+            // тело цикла
             if (!ParseStatement()) return false;
 
             // end
@@ -116,111 +175,98 @@ namespace Lab4.Services
                 return Error("Ожидался 'end'");
             NextToken();
 
-            // Записываем адрес начала
+            // Переход назад
             WriteCmdPtr(startPos);
             int jmpPos = WriteCmd(ECmd.JMP);
 
-            // Подставляем реальный адрес конца (jmpPos+1)
+            // fix JZ
             SetCmdPtr(jzPtrIndex, jmpPos + 1);
 
             return true;
         }
 
         //------------------------------------------------------------------------
-        // ДОБАВЛЕННЫЙ МЕТОД: do until <Condition> <Operators> loop
+        // do until <Condition> <Operators> loop
         //------------------------------------------------------------------------
         private bool ParseDoUntilStatement()
         {
-            // Ожидаем 'do'
+            // do
             if (Current == null || Current.Type != TokenType.Do)
-                return Error("Ожидалось 'do'");
-            NextToken(); // съели 'do'
+                return Error("Ожидался 'do'");
+            NextToken();
 
-            // Ожидаем 'until'
+            // until
             if (Current == null || Current.Type != TokenType.Until)
-                return Error("Ожидалось 'until'");
-            NextToken(); // съели 'until'
+                return Error("Ожидался 'until'");
+            NextToken();
 
-            // Запомним начало тела (адрес в ПОЛИЗ)
             int startPos = _postfix.Count;
 
-            // Парсим <Condition> (генерация ПОЛИЗа для лог. выражения)
+            // <Condition>
             if (!ParseCondition()) return false;
 
-            // Дополнительно вставляем команду NOT
-            // (т.к. do until cond == пока cond==false => while !cond)
+            // NOT
             WriteCmd(ECmd.NOT);
 
-            // Запишем фиктивный адрес, вернём индекс
+            // JZ
             int jzPtrIndex = WriteCmdPtr(-1);
             WriteCmd(ECmd.JZ);
 
-            // Теперь парсим <операторы> (или 1 оператор). 
-            // В зависимости от вашей грамматики, это может быть ParseOperators()
-            if (!ParseOperators()) return false;
+            // тело цикла
+            if (!ParseStatement()) return false;
 
-            // Ожидаем 'loop'
+            // loop
             if (Current == null || Current.Type != TokenType.Loop)
-                return Error("Ожидалось 'loop'");
-            NextToken(); // съели 'loop'
+                return Error("Ожидался 'loop'");
+            NextToken();
 
-            // Вставляем переход назад на startPos
+            // Переход назад
             WriteCmdPtr(startPos);
             int jmpPos = WriteCmd(ECmd.JMP);
 
-            // Подставляем реальный адрес конца (jmpPos + 1)
+            // Fix JZ
             SetCmdPtr(jzPtrIndex, jmpPos + 1);
 
             return true;
         }
 
         //------------------------------------------------------------------------
-        // Дополнительная логика для логического условия
+        // Присваивание: x = <ArithExpr>
         //------------------------------------------------------------------------
-
-        private bool ParseCondition()
+        private bool ParseAssignStatement()
         {
-            // <Condition> -> <LogExpr> { or <LogExpr> }
-            if (!ParseLogExpr()) return false;
-            while (Current != null && Current.Type == TokenType.Or)
-            {
-                NextToken();
-                if (!ParseLogExpr()) return false;
-                WriteCmd(ECmd.OR);
-            }
+            if (Current == null || Current.Type != TokenType.Var)
+                return Error("Ожидался идентификатор");
+            int vIndex = Current.Index;
+            NextToken();
+
+            if (Current == null || Current.Type != TokenType.As)
+                return Error("Ожидался '='");
+            NextToken();
+
+            // слева varIndex
+            WriteVar(vIndex);
+
+            // правая часть
+            if (!ParseArithExpr()) return false;
+
+            // SET
+            WriteCmd(ECmd.SET);
             return true;
         }
 
-        private bool ParseLogExpr()
+        //------------------------------------------------------------------------
+        // <ArithExpr> -> <Operand> { Ao <Operand> }
+        //------------------------------------------------------------------------
+        private bool ParseArithExpr()
         {
-            // <LogExpr> -> <RelExpr> { and <RelExpr> }
-            if (!ParseRelExpr()) return false;
-            while (Current != null && Current.Type == TokenType.And)
-            {
-                NextToken();
-                if (!ParseRelExpr()) return false;
-                WriteCmd(ECmd.AND);
-            }
-            return true;
-        }
-
-        private bool ParseRelExpr()
-        {
-            // <RelExpr> -> <Operand> [ rel <Operand> ]
             if (!ParseOperand()) return false;
 
-            if (Current != null && Current.Type == TokenType.Rel)
+            while (Current != null && Current.Type == TokenType.Ao)
             {
-                // Определяем, какая команда: <, <=, ==, <>, ...
-                ECmd cmd = ECmd.CMPE;
-                switch (Current.Lexeme)
-                {
-                    case "<": cmd = ECmd.CMPL; break;
-                    case "<=": cmd = ECmd.CMPLE; break;
-                    case "==": cmd = ECmd.CMPE; break;
-                    case "<>": cmd = ECmd.CMPNE; break;
-                        // при желании: case ">": ..., case ">=": ...
-                }
+                ECmd cmd = ECmd.ADD;
+                if (Current.Lexeme == "-")
+                    cmd = ECmd.SUB;
                 NextToken();
 
                 if (!ParseOperand()) return false;
@@ -229,14 +275,19 @@ namespace Lab4.Services
             return true;
         }
 
+        //------------------------------------------------------------------------
+        // <Operand> -> var | const
+        //  теперь var => LOAD varIndex
+        //------------------------------------------------------------------------
         private bool ParseOperand()
         {
-            // <Operand> -> var | const
             if (Current == null)
                 return Error("Ожидался операнд");
+
             if (Current.Type == TokenType.Var)
             {
-                WriteVar(Current.Index);
+                // Чтение значения переменной
+                WriteLoadVar(Current.Index);
                 NextToken();
                 return true;
             }
@@ -253,95 +304,49 @@ namespace Lab4.Services
         }
 
         //------------------------------------------------------------------------
-        // Операторы
+        // Логические выражения
         //------------------------------------------------------------------------
-
-        /// <summary>
-        /// Парсим последовательность операторов (минимум один).
-        /// Если нужно, можно расширить, чтобы обрабатывать ";", несколько операторов.
-        /// </summary>
-        private bool ParseOperators()
+        private bool ParseCondition()
         {
-            // Пример: парсим хотя бы один оператор:
-            if (!ParseStatement()) return false;
-
-            // Если у вас операторы разделяются ;, можно сделать так:
-            // while (Current != null && Current.Type == TokenType.Semicolon)
-            // {
-            //    NextToken();
-            //    if (!ParseStatement()) return false;
-            // }
+            // <LogExpr> { or <LogExpr> }
+            if (!ParseLogExpr()) return false;
+            while (Current != null && Current.Type == TokenType.Or)
+            {
+                NextToken();
+                if (!ParseLogExpr()) return false;
+                WriteCmd(ECmd.OR);
+            }
             return true;
         }
 
-        /// <summary>
-        /// Универсальный метод, выбирающий, какой оператор сейчас парсить:
-        /// - while <Condition> do ...
-        /// - do until <Condition> ...
-        /// - var as <ArithExpr>
-        /// И так далее. 
-        /// </summary>
-        private bool ParseStatement()
+        private bool ParseLogExpr()
         {
-            if (Current == null)
-                return Error("Ожидался оператор, но вход закончился");
-
-            if (Current.Type == TokenType.While)
+            // <RelExpr> { and <RelExpr> }
+            if (!ParseRelExpr()) return false;
+            while (Current != null && Current.Type == TokenType.And)
             {
-                return ParseWhileStatement();
+                NextToken();
+                if (!ParseRelExpr()) return false;
+                WriteCmd(ECmd.AND);
             }
-            else if (Current.Type == TokenType.Do)
-            {
-                // Может быть do until ...
-                return ParseDoUntilStatement();
-            }
-            else if (Current.Type == TokenType.Var)
-            {
-                // Считаем это присваиванием var = expr
-                return ParseAssignStatement();
-            }
-            else
-            {
-                return Error($"Неизвестный оператор. Лексема: {Current.Lexeme}");
-            }
-        }
-
-        private bool ParseAssignStatement()
-        {
-            // <Statement> -> var as <ArithExpr>
-            if (Current == null || Current.Type != TokenType.Var)
-                return Error("Ожидался идентификатор (var)");
-            int vIndex = Current.Index;
-            NextToken();
-
-            if (Current == null || Current.Type != TokenType.As)
-                return Error("Ожидался оператор 'as'");
-            NextToken();
-
-            // Ставим var
-            WriteVar(vIndex);
-
-            // <ArithExpr>
-            if (!ParseArithExpr()) return false;
-
-            // SET
-            WriteCmd(ECmd.SET);
             return true;
         }
 
-        private bool ParseArithExpr()
+        private bool ParseRelExpr()
         {
-            // <ArithExpr> -> <Operand> { ao <Operand> }
+            // <Operand> [rel <Operand>]
             if (!ParseOperand()) return false;
 
-            while (Current != null && Current.Type == TokenType.Ao)
+            if (Current != null && Current.Type == TokenType.Rel)
             {
-                // +, -
-                ECmd cmd = ECmd.ADD;
-                if (Current.Lexeme == "-")
-                    cmd = ECmd.SUB;
-                // (Если надо * /, добавляйте)
-
+                ECmd cmd = ECmd.CMPE;
+                switch (Current.Lexeme)
+                {
+                    case "<": cmd = ECmd.CMPL; break;
+                    case "<=": cmd = ECmd.CMPLE; break;
+                    case "==": cmd = ECmd.CMPE; break;
+                    case "<>": cmd = ECmd.CMPNE; break;
+                }
                 NextToken();
 
                 if (!ParseOperand()) return false;
@@ -350,8 +355,6 @@ namespace Lab4.Services
             return true;
         }
 
-        //------------------------------------------------------------------------
-        // Доступ к результату - ПОЛИЗ
         //------------------------------------------------------------------------
         public IReadOnlyList<PostfixEntry> GetPostfix() => _postfix;
     }

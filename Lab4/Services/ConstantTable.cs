@@ -2,9 +2,6 @@
 
 namespace Lab4.Services
 {
-    /// <summary>
-    /// Таблица констант. Аналогична таблице переменных.
-    /// </summary>
     public class ConstantTable
     {
         private List<string> _consts = new List<string>();

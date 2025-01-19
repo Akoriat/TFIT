@@ -8,7 +8,7 @@ namespace Lab4.Services
     public class Interpreter
     {
         private readonly List<PostfixEntry> _postfix;
-        private readonly int[] _varValues;      // значения переменных
+        private readonly int[] _varValues; // хранит значения всех переменных
         private readonly Stack<int> _stack;
         private readonly ConstantTable _constTable;
 
@@ -33,6 +33,27 @@ namespace Lab4.Services
                             ECmd cmd = (ECmd)e.index;
                             switch (cmd)
                             {
+                                // Новая команда LOAD
+                                case ECmd.LOAD:
+                                    {
+                                        // LOAD и следующая запись etCmdPtr(varIndex)
+                                        if (pos + 1 >= _postfix.Count)
+                                            throw new Exception("No CmdPtr after LOAD");
+                                        PostfixEntry nextE = _postfix[pos + 1];
+                                        if (nextE.type != EEntryType.etCmdPtr)
+                                            throw new Exception("LOAD expects next entry = etCmdPtr(varIndex)");
+
+                                        int vIndex = nextE.index;
+                                        if (vIndex < 0 || vIndex >= _varValues.Length)
+                                            throw new Exception($"varIndex={vIndex} вне массива (0..{_varValues.Length - 1})");
+
+                                        int currentVal = _varValues[vIndex];
+                                        _stack.Push(currentVal);
+
+                                        pos += 2;
+                                        continue;
+                                    }
+
                                 case ECmd.JMP:
                                     {
                                         if (_stack.Count < 1)
@@ -54,16 +75,22 @@ namespace Lab4.Services
                                         }
                                     }
                                     break;
+
                                 case ECmd.SET:
                                     {
-                                        // var, val
+                                        // stack: [varIndex, val]
                                         if (_stack.Count < 2)
                                             throw new Exception("Stack underflow on SET");
-                                        int val = _stack.Pop();
+                                        int value = _stack.Pop();
                                         int varIndex = _stack.Pop();
-                                        _varValues[varIndex] = val;
+
+                                        if (varIndex < 0 || varIndex >= _varValues.Length)
+                                            throw new Exception($"varIndex={varIndex} вне (0..{_varValues.Length - 1})");
+
+                                        _varValues[varIndex] = value;
                                     }
                                     break;
+
                                 case ECmd.ADD:
                                     {
                                         if (_stack.Count < 2)
@@ -82,33 +109,12 @@ namespace Lab4.Services
                                         _stack.Push(v1 - v2);
                                     }
                                     break;
-                                case ECmd.MUL:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on MUL");
-                                        int v2 = _stack.Pop();
-                                        int v1 = _stack.Pop();
-                                        _stack.Push(v1 * v2);
-                                    }
-                                    break;
-                                case ECmd.DIV:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on DIV");
-                                        int v2 = _stack.Pop();
-                                        int v1 = _stack.Pop();
-                                        if (v2 == 0)
-                                            throw new DivideByZeroException();
-                                        _stack.Push(v1 / v2);
-                                    }
-                                    break;
                                 case ECmd.AND:
                                     {
                                         if (_stack.Count < 2)
                                             throw new Exception("Stack underflow on AND");
                                         int v2 = _stack.Pop();
                                         int v1 = _stack.Pop();
-                                        // 0 = false, !=0 = true
                                         _stack.Push((v1 != 0 && v2 != 0) ? 1 : 0);
                                     }
                                     break;
@@ -171,24 +177,30 @@ namespace Lab4.Services
                             pos++;
                         }
                         break;
+
                     case EEntryType.etVar:
-                        // Кладём индекс переменной в стек
-                        _stack.Push(e.index);
-                        pos++;
+                        {
+                            // Это "адрес переменной" (индекс) - нужно для SET 
+                            // => на стеке окажется varIndex.
+                            _stack.Push(e.index);
+                            pos++;
+                        }
                         break;
+
                     case EEntryType.etConst:
                         {
-                            // Превращаем текст константы в int
                             string sVal = _constTable.GetConstant(e.index);
                             int val = int.Parse(sVal, CultureInfo.InvariantCulture);
                             _stack.Push(val);
                             pos++;
                         }
                         break;
+
                     case EEntryType.etCmdPtr:
-                        // Просто кладём адрес (число) в стек
-                        _stack.Push(e.index);
-                        pos++;
+                        {
+                            _stack.Push(e.index);
+                            pos++;
+                        }
                         break;
                 }
             }

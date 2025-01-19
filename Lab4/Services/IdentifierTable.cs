@@ -2,10 +2,6 @@
 
 namespace Lab4.Services
 {
-    /// <summary>
-    /// Таблица переменных (идентификаторов).
-    /// Содержит уникальные имена, возвращает индекс.
-    /// </summary>
     public class IdentifierTable
     {
         private List<string> _ids = new List<string>();
@@ -28,9 +24,6 @@ namespace Lab4.Services
             return _ids[index];
         }
 
-        /// <summary>
-        /// Список всех идентификаторов.
-        /// </summary>
         public IReadOnlyList<string> All => _ids;
     }
 }

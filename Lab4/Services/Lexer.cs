@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Lab4.Models;
 
 namespace Lab4.Services
@@ -50,7 +49,7 @@ namespace Lab4.Services
                     continue;
                 }
 
-                // Операции сравнения / присваивания
+                // < или >
                 if (c == '<' || c == '>')
                 {
                     int startPos = position;
@@ -58,7 +57,7 @@ namespace Lab4.Services
                     if (position < text.Length)
                     {
                         char next = text[position];
-                        // "<=", "<>", ">=", и т.д.
+                        // "<=", "<>", ">="
                         if (next == '=' || (c == '<' && next == '>'))
                         {
                             position++;
@@ -67,11 +66,12 @@ namespace Lab4.Services
                             continue;
                         }
                     }
-                    // иначе просто "<" или ">"
+                    // Иначе просто "<" или ">"
                     tokens.Add(new Token(TokenType.Rel, c.ToString(), startPos));
                     continue;
                 }
 
+                // =
                 if (c == '=')
                 {
                     int startPos = position;
@@ -84,7 +84,7 @@ namespace Lab4.Services
                     }
                     else
                     {
-                        // Считаем это оператором присваивания (as)
+                        // одиночный '=' => оператор присваивания
                         tokens.Add(new Token(TokenType.As, "=", startPos));
                     }
                     continue;
@@ -98,7 +98,7 @@ namespace Lab4.Services
                     continue;
                 }
 
-                // Если что-то неизвестное
+                // Неизвестный символ
                 tokens.Add(new Token(TokenType.Unknown, c.ToString(), position));
                 position++;
             }
@@ -111,16 +111,16 @@ namespace Lab4.Services
             switch (lexeme.ToLower())
             {
                 case "while": return TokenType.While;
-                case "end": return TokenType.End;
-                case "and": return TokenType.And;
-                case "or": return TokenType.Or;
-                case "not": return TokenType.Not;
                 case "do": return TokenType.Do;
+                case "end": return TokenType.End;
                 case "until": return TokenType.Until;
                 case "loop": return TokenType.Loop;
-                case "as": return TokenType.As;
+                case "and": return TokenType.And;
+                case "or": return TokenType.Or;
+                // при желании "not", etc.
 
-                default: return TokenType.Var;
+                default:
+                    return TokenType.Var; // всё остальное - Var
             }
         }
     }

@@ -1,13 +1,12 @@
 ﻿namespace Lab4.Models
 {
     /// <summary>
-    /// Один элемент ПОЛИЗа.
-    /// В зависимости от type, index интерпретируется по-разному.
+    /// Один элемент ПОЛИЗ (type + index).
     /// </summary>
     public struct PostfixEntry
     {
-        public EEntryType type;  // etCmd / etVar / etConst / etCmdPtr
-        public int index;        // код команды / индекс var / индекс const / адрес
+        public EEntryType type;
+        public int index;
 
         public PostfixEntry(EEntryType t, int i)
         {
