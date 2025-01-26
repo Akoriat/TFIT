@@ -2,9 +2,6 @@
 
 namespace Lab1.Services
 {
-    /// <summary>
-    /// Хранит все уникальные константы, выдает индекс.
-    /// </summary>
     public class ConstantTable
     {
         private readonly List<string> _constants = new List<string>();

@@ -1,4 +1,4 @@
-﻿namespace TFYIT_Task1.Classes;
+﻿namespace Automath.Classes;
 
 public enum TypeAutomaton
 {

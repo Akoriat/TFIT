@@ -15,7 +15,6 @@ namespace Lab1.Views
         {
             InitializeComponent();
 
-            // Инициализируем таблицы и лексер
             _idTable = new IdentifierTable();
             _constTable = new ConstantTable();
             _lexer = new Lexer(_idTable, _constTable);
@@ -27,10 +26,8 @@ namespace Lab1.Views
 
             string code = SourceCodeTextBox.Text;
 
-            // Запускаем лексический анализ
             List<Token> tokens = _lexer.Analyze(code);
 
-            // Выводим лексемы
             foreach (var token in tokens)
             {
                 TokensListBox.Items.Add(token.ToString());

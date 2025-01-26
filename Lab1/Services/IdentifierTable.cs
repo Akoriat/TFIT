@@ -2,9 +2,6 @@
 
 namespace Lab1.Services
 {
-    /// <summary>
-    /// Хранит все уникальные идентификаторы, выдает индекс.
-    /// </summary>
     public class IdentifierTable
     {
         private readonly List<string> _identifiers = new List<string>();

@@ -1,4 +1,4 @@
-﻿namespace TFYIT_Task1.Classes;
+﻿namespace Automath.Classes;
 
 internal class Automaton
 {
@@ -32,7 +32,6 @@ internal class Automaton
 
             bool emergencyStop = false;
 
-            // определение типа автомата по первой строке файла
             if (parameter == "DKA") type = TypeAutomaton.DKA;
             else if (parameter == "NKA") type = TypeAutomaton.NKA;
             else if (parameter == "NKA-E") type = TypeAutomaton.ENKA;
@@ -49,7 +48,7 @@ internal class Automaton
                 line = file.ReadLine();
                 while (line != null)
                 {
-                    if (line.StartsWith("Q:")) // ввод состояний
+                    if (line.StartsWith("Q:"))
                     {
                         line = line.Replace("Q:", "");
                         line = line.Replace(" ", "");
@@ -57,7 +56,7 @@ internal class Automaton
                         gotStates = true;
 
                     }
-                    else if (line.StartsWith("S:")) // ввод алфавита
+                    else if (line.StartsWith("S:"))
                     {
                         line = line.Replace("S:", "");
                         line = line.Replace(" ", "");
