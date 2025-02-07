@@ -1,9 +1,10 @@
-﻿namespace Lab0.Classes;
-
-public enum TypeAutomaton
+﻿namespace Lab0.Classes
 {
-    None = 0,
-    DKA = 1,
-    NKA = 2,
-    ENKA = 3
+    public enum TypeAutomaton
+    {
+        None = 0,
+        DKA = 1,
+        NKA = 2,
+        ENKA = 3
+    }
 }

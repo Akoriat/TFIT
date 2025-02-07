@@ -1,37 +1,45 @@
 ﻿using Lab0.Classes;
+using System;
 
-namespace Lab0;
-
-class Program
+namespace Lab0
 {
-    static void Main(string[] args)
+    class Program
     {
-        string path = @"Resources\example.txt";
-        Automaton newAutomath = new Automaton(path);
-        newAutomath.ShowInfo();
-        Console.WriteLine();
-        newAutomath.ShowTable();
-
-        string inLine;
-        Console.Write("\nВведите входное слово: ");
-        inLine = Console.ReadLine();
-        newAutomath.ProcessInputLine(inLine);
-
-        if (newAutomath.type == TypeAutomaton.NKA) // для случая недетерминированного автомата
+        static void Main(string[] args)
         {
-            Automaton newAuto = newAutomath.knaToKda();
-            if (newAuto != null)
+            string path = @"Resources\example.txt";
+            Automaton automaton = Automaton.CreateFromFile(path);
+            if (automaton == null)
+                return;
+
+            automaton.ShowInfo();
+            Console.WriteLine();
+            automaton.ShowTable();
+
+            Console.Write("\nВведите входное слово: ");
+            string inLine = Console.ReadLine();
+            automaton.ProcessInputLine(inLine);
+
+            // Если автомат – НКА, выполняем преобразование в ДКА
+            if (automaton.Type == TypeAutomaton.NKA)
             {
-                newAuto.ShowInfo();
-                newAuto.ShowTable();
+                NonDeterministicAutomaton nka = automaton as NonDeterministicAutomaton;
+                DeterministicAutomaton dka = nka.ToDeterministic();
+                if (dka != null)
+                {
+                    dka.ShowInfo();
+                    dka.ShowTable();
+                }
             }
-        }
 
-        if (newAutomath.type == TypeAutomaton.ENKA)
-        {
-            Automaton newAuto = newAutomath.knaEpsToKna();
-            newAuto.ShowInfo();
-            newAuto.ShowTable();
+            // Если автомат – ЕНКА, выполняем преобразование в "обычный" НКА
+            if (automaton.Type == TypeAutomaton.ENKA)
+            {
+                EpsilonAutomaton enka = automaton as EpsilonAutomaton;
+                NonDeterministicAutomaton nka = enka.ToNonDeterministic();
+                nka.ShowInfo();
+                nka.ShowTable();
+            }
         }
     }
 }
