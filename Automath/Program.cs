@@ -1,6 +1,6 @@
-﻿using TFYIT_Task1.Classes;
+﻿using Lab0.Classes;
 
-namespace TFYIT_Task1;
+namespace Lab0;
 
 class Program
 {

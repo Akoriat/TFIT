@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Automath", "Automath\Automath.csproj", "{D6C431B5-4F60-4AD3-BC5F-6A83C7F18F36}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lab0(Avtomat)", "Automath\Lab0(Avtomat).csproj", "{D6C431B5-4F60-4AD3-BC5F-6A83C7F18F36}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lab1", "Lab1\Lab1.csproj", "{9D74B3CF-90DF-4765-96F3-95A72B595879}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lab2", "Lab2\Lab2.csproj", "{F771E795-3E41-4452-A64B-631BF4DB8BE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lab3", "Lab3\Lab3.csproj", "{C230BCB9-6B69-4915-A5C7-E769EC1F9471}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lab3", "Lab3\Lab3.csproj", "{C230BCB9-6B69-4915-A5C7-E769EC1F9471}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lab4", "Lab4\Lab4.csproj", "{CB7AE809-B0BC-4CCF-9C12-8733024CEB27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lab4", "Lab4\Lab4.csproj", "{CB7AE809-B0BC-4CCF-9C12-8733024CEB27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

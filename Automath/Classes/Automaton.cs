@@ -1,4 +1,4 @@
-﻿namespace Automath.Classes;
+﻿namespace Lab0.Classes;
 
 internal class Automaton
 {
