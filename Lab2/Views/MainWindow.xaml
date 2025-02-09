@@ -1,11 +1,11 @@
-﻿<Window x:Class="Lab1.Views.MainWindow"
+﻿<Window x:Class="Lab2.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Lab1 - Lexer Demo" Height="450" Width="800">
+        Title="Lab2 Parser" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal" Margin="10">
@@ -17,21 +17,20 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Поле для ввода кода -->
             <TextBox x:Name="SourceCodeTextBox"
                      Margin="10"
                      TextWrapping="Wrap"
-                     AcceptsReturn="True"
-                     VerticalScrollBarVisibility="Auto"/>
+                     AcceptsReturn="True" />
 
-            <!-- Вывод лексем -->
-            <ListBox x:Name="TokensListBox"
+            <TextBox x:Name="ResultTextBox"
                      Grid.Column="1"
-                     Margin="10"/>
+                     Margin="10"
+                     IsReadOnly="True"
+                     TextWrapping="Wrap" />
         </Grid>
     </Grid>
 </Window>

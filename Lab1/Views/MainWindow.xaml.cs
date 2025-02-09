@@ -1,32 +1,38 @@
 ﻿using System.Windows;
+using Lab1.Services;
+using Lab1.Models;
+using System.Collections.Generic;
 
-namespace LexicalAnalyzerWPF
+namespace Lab1.Views
 {
     public partial class MainWindow : Window
     {
+        private readonly Lexer _lexer;
+        private readonly IdentifierTable _idTable;
+        private readonly ConstantTable _constTable;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            _idTable = new IdentifierTable();
+            _constTable = new ConstantTable();
+            _lexer = new Lexer(_idTable, _constTable);
         }
 
-        // Обработчик нажатия кнопки Analyze
         private void AnalyzeButton_Click(object sender, RoutedEventArgs e)
         {
-            string input = InputTextBox.Text;
-            LexAnalyzer analyzer = new LexAnalyzer();
+            TokensListBox.Items.Clear();
 
-            bool success = analyzer.Analyze(input);
-            if (success)
+            string code = SourceCodeTextBox.Text;
+
+            List<Token> tokens = _lexer.Analyze(code);
+
+            foreach (var token in tokens)
             {
-                // Отобразим результаты в DataGrid’ах
-                TokensDataGrid.ItemsSource = analyzer.Tokens;
-                IdentifiersDataGrid.ItemsSource = analyzer.Identifiers;
-                ConstantsDataGrid.ItemsSource = analyzer.Constants;
-            }
-            else
-            {
-                MessageBox.Show("Lexical analysis failed.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                TokensListBox.Items.Add(token.ToString());
             }
         }
     }
 }
+

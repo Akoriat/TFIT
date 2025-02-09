@@ -213,34 +213,31 @@ namespace Lab0.Classes
                 {
                     if (i == 0)
                     {
-                        // Заголовочная строка
                         for (int j = 0; j < Inputs.Length + 1; j++)
                         {
                             if (j == 0)
-                                // Выводим первую ячейку без двоеточия
-                                Console.Write("{0,-" + (maxLength + 2) + "}\t", "");
+                                Console.Write("{{0,-" + (maxLength + 2) + "}}:\t", "");
                             else
-                                Console.Write("|{0,-" + (maxLength + 1) + "}", Inputs[j - 1]);
+                                Console.Write("|{{0,-" + (maxLength + 1) + "}}", Inputs[j - 1]);
                         }
                     }
                     else
                     {
-                        // Строки с данными автомата
                         for (int j = 0; j < Inputs.Length + 1; j++)
                         {
                             if (j == 0)
                             {
                                 if (States[i - 1] == InitState && FinalStates.Contains(States[i - 1]))
-                                    Console.Write("->*{0,-" + (maxLength) + "}: \t", States[i - 1]);
+                                    Console.Write("->*{{0,-" + (maxLength) + "}}:\t", States[i - 1]);
                                 else if (States[i - 1] == InitState)
-                                    Console.Write("->{0,-" + (maxLength + 1) + "}: \t", States[i - 1]);
+                                    Console.Write("->{{0,-" + (maxLength + 1) + "}}:\t", States[i - 1]);
                                 else if (FinalStates.Contains(States[i - 1]))
-                                    Console.Write(" *{0,-" + (maxLength + 1) + "}: \t", States[i - 1]);
+                                    Console.Write(" *{{0,-" + (maxLength + 1) + "}}:\t", States[i - 1]);
                                 else
-                                    Console.Write("  {0,-" + (maxLength + 1) + "}: \t", States[i - 1]);
+                                    Console.Write("  {{0,-" + (maxLength + 1) + "}}:\t", States[i - 1]);
                             }
                             else
-                                Console.Write("|{0,-" + (maxLength + 1) + "}", Transitions[States[i - 1]][j - 1]);
+                                Console.Write("|{{0,-" + (maxLength + 1) + "}}", Transitions[States[i - 1]][j - 1]);
                         }
                     }
                     Console.WriteLine();
@@ -253,8 +250,6 @@ namespace Lab0.Classes
                 Console.ResetColor();
             }
         }
-
-
 
         // Вспомогательный метод для расчёта максимальной длины строки в таблице переходов.
         protected int MaxLengthForTable()
