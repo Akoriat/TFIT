@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Lab2.Models;
 
-namespace Lab2
+namespace Lab2.Services
 {
     // Синтаксический анализатор методом рекурсивного спуска
     public static class Parser

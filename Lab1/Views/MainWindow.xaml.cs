@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using Lab1.Services;
 
 namespace LexicalAnalyzerWPF
 {

@@ -1,53 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Lab1.Models;
 
-namespace LexicalAnalyzerWPF
+namespace Lab1.Services
 {
-    // Перечисление типов лексем
-    public enum TokenType
-    {
-        // Ключевые слова, используемые в конструкции цикла (и логических выражениях)
-        Do,
-        Until,
-        Loop,
-        Output,
-        Not,
-        And,
-        Or,
-
-        // Идентификатор и константа
-        Identifier,
-        Constant,
-
-        // Операторы сравнения: <, >, <>  
-        RelOp,
-
-        // Знак равенства: используется как оператор присваивания или для сравнения
-        Equal,
-
-        // Арифметические операторы
-        Plus,
-        Minus,
-        Multiply,
-        Divide,
-
-        // Разделитель – точка с запятой (используется в грамматике оператора)
-        Semicolon,
-
-        // Неизвестный символ
-        Unknown
-    }
-
-    // Класс для представления лексемы
-    public class Token
-    {
-        public TokenType Type { get; set; }
-        public string Lexeme { get; set; }
-        /// <summary>
-        /// Позиция в исходном тексте (индекс первого символа лексемы)
-        /// </summary>
-        public int Position { get; set; }
-    }
 
     // Лексический анализатор
     public class LexAnalyzer
