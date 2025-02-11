@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Lab0.Classes
 {
-    public class NonDeterministicAutomaton : Automaton
+    public class DnaAutomath : Automath
     {
-        public NonDeterministicAutomaton(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
+        public DnaAutomath(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
             : base(TypeAutomaton.NKA, states, inputs, finalStates, initState, transitions)
         {
         }
@@ -115,10 +115,7 @@ namespace Lab0.Classes
             return false;
         }
 
-        /// <summary>
-        /// Преобразование НКА в ДКА.
-        /// </summary>
-        public DeterministicAutomaton ToDeterministic()
+        public DkaAutomath ToDka()
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("\nВыполняется преобразование НКА к ДКА:\n");
@@ -215,7 +212,7 @@ namespace Lab0.Classes
             }
 
             newStates.Remove("~");
-            return new DeterministicAutomaton(newStates.ToArray(), Inputs, newFinalStates.Distinct().ToArray(), InitState, newTransitions);
+            return new DkaAutomath(newStates.ToArray(), Inputs, newFinalStates.Distinct().ToArray(), InitState, newTransitions);
         }
     }
 }

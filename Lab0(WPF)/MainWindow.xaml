@@ -1,38 +1,29 @@
-﻿<Window x:Class="WpfAutomaton.MainWindow"
+﻿<Window x:Class="WpfAutomath.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Автомат" Height="700" Width="600">
+        Title="Автомат" Height="700" Width="1003">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Выбор источника -->
             <RowDefinition Height="Auto"/>
-            <!-- Панель ввода из файла -->
             <RowDefinition Height="Auto"/>
-            <!-- Панель ручного ввода -->
             <RowDefinition Height="Auto"/>
-            <!-- Кнопка загрузки автомата -->
             <RowDefinition Height="*"/>
-            <!-- Вывод (консоль) -->
             <RowDefinition Height="Auto"/>
-            <!-- Ввод входного слова и кнопка -->
         </Grid.RowDefinitions>
 
-        <!-- 1. Выбор источника данных -->
         <StackPanel Orientation="Horizontal" Grid.Row="0">
             <TextBlock Text="Источник данных:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <RadioButton x:Name="rbFile" Content="Из файла" IsChecked="True" Checked="rbFile_Checked" Margin="0,0,10,0"/>
             <RadioButton x:Name="rbManual" Content="Ввести вручную" Checked="rbManual_Checked"/>
         </StackPanel>
 
-        <!-- 2. Панель для ввода из файла -->
         <StackPanel x:Name="spFileInput" Orientation="Horizontal" Grid.Row="1" Margin="0,5">
             <TextBlock Text="Путь к файлу:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <TextBox x:Name="txtFilePath" Width="300"/>
             <Button x:Name="btnDefaultFile" Content="Использовать файл по умолчанию" Margin="5,0,0,0" Click="btnDefaultFile_Click"/>
         </StackPanel>
 
-        <!-- 3. Панель для ручного ввода -->
         <StackPanel x:Name="spManualInput" Grid.Row="2" Margin="0,5" Visibility="Collapsed">
             <TextBlock Text="Введите описание автомата:" FontWeight="Bold" Margin="0,0,0,5"/>
 
@@ -68,21 +59,25 @@
             <StackPanel Orientation="Vertical" Margin="0,5,0,0">
                 <TextBlock Text="Таблица переходов:"/>
                 <TextBox x:Name="txtTransitions" Height="100" Width="550" AcceptsReturn="True" TextWrapping="Wrap"/>
-                <TextBlock Text="Каждая строка соответствует состоянию (порядок как в поле 'Состояния'). Значения разделяются пробелом." FontStyle="Italic" FontSize="10"/>
             </StackPanel>
         </StackPanel>
 
-        <!-- 4. Кнопка загрузки автомата -->
         <Button x:Name="btnLoad" Content="Загрузить автомат" Grid.Row="3" Width="150" Height="30" Margin="0,10,0,10" Click="btnLoad_Click"/>
 
-        <!-- 5. Вывод (консоль) -->
         <TextBox x:Name="txtOutput" Grid.Row="4" Height="200" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" IsReadOnly="True" TextWrapping="Wrap"/>
 
-        <!-- 6. Ввод входного слова и обработка -->
+        <!--<StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,10,0,0">
+            <TextBlock Text="Входное слово:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox x:Name="txtInputWord" Width="200" Margin="0,0,5,0"/>
+            <Button x:Name="btnProcess" Content="Обработать" Width="100" Click="btnProcess_Click"/>
+        </StackPanel>-->
+        
         <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,10,0,0">
             <TextBlock Text="Входное слово:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <TextBox x:Name="txtInputWord" Width="200" Margin="0,0,5,0"/>
             <Button x:Name="btnProcess" Content="Обработать" Width="100" Click="btnProcess_Click"/>
+            <Button x:Name="btnToDKA" Content="Преобразовать в ДКА" Width="150" Margin="10,0,0,0" Click="btnToDKA_Click"/>
+            <Button x:Name="btnToNKA" Content="Преобразовать в НКА" Width="150" Margin="10,0,0,0" Click="btnToNKA_Click" RenderTransformOrigin="0.519,0.574"/>
         </StackPanel>
     </Grid>
 </Window>

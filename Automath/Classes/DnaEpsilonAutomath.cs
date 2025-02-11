@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Lab0.Classes
 {
-    public class EpsilonAutomaton : Automaton
+    public class DnaEpsilonAutomath : Automath
     {
-        public EpsilonAutomaton(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
+        public DnaEpsilonAutomath(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
             : base(TypeAutomaton.ENKA, states, inputs, finalStates, initState, transitions)
         {
         }
@@ -211,10 +211,7 @@ namespace Lab0.Classes
             return false;
         }
 
-        /// <summary>
-        /// Преобразование НКА с е-переходами в «обычный» НКА (без е-переходов).
-        /// </summary>
-        public NonDeterministicAutomaton ToNonDeterministic()
+        public DnaAutomath ToNka()
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("\nВыполняется преобразование НКА с эпсилон-переходами к 'обычному' НКА:\n");
@@ -283,12 +280,9 @@ namespace Lab0.Classes
                     newTransitions.Add(state, tempTransitions);
                 }
             }
-            return new NonDeterministicAutomaton(newStates.ToArray(), newInputs.ToArray(), newFinalStates.ToArray(), InitState, newTransitions);
+            return new DnaAutomath(newStates.ToArray(), newInputs.ToArray(), newFinalStates.ToArray(), InitState, newTransitions);
         }
 
-        /// <summary>
-        /// Вычисляет замыкание по е-переходам для всех состояний.
-        /// </summary>
         public Dictionary<string, List<string>> GetAllClosures()
         {
             if (Type == TypeAutomaton.ENKA)

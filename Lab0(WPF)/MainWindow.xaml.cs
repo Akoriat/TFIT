@@ -1,4 +1,4 @@
-﻿using Lab0.Classes;  // Подключите библиотеку с классами автомата
+﻿using Lab0.Classes;
 using System;
 using System.IO;
 using System.Linq;
@@ -6,11 +6,9 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace WpfAutomaton
+namespace WpfAutomath
 {
-    /// <summary>
-    /// Класс для перенаправления Console.Out в TextBox.
-    /// </summary>
+
     public class TextBoxStreamWriter : TextWriter
     {
         private TextBox _output;
@@ -44,15 +42,62 @@ namespace WpfAutomaton
 
     public partial class MainWindow : Window
     {
-        private Automaton _automaton;
+        private Automath _automath;
 
         public MainWindow()
         {
-            InitializeComponent(); // Создание всех элементов из XAML
+            InitializeComponent();
             Console.SetOut(new TextBoxStreamWriter(txtOutput));
         }
 
-        // При выборе режима "Из файла" делаем видимой панель файла и скрываем ручной ввод
+        private void btnToDKA_Click(object sender, RoutedEventArgs e)
+        {
+            if (_automath == null)
+            {
+                MessageBox.Show("Сначала загрузите автомат.");
+                return;
+            }
+
+            if (_automath.Type == TypeAutomaton.NKA)
+            {
+                _automath = (_automath as DnaAutomath)?.ToDka();
+                if (_automath != null)
+                {
+                    _automath.ShowInfo();
+                    Console.WriteLine();
+                    _automath.ShowTable();
+                }
+            }
+            else
+            {
+                MessageBox.Show("Преобразование в ДКА возможно только для НКА.");
+            }
+        }
+
+        private void btnToNKA_Click(object sender, RoutedEventArgs e)
+        {
+            if (_automath == null)
+            {
+                MessageBox.Show("Сначала загрузите автомат.");
+                return;
+            }
+
+            if (_automath.Type == TypeAutomaton.ENKA)
+            {
+                _automath = (_automath as DnaEpsilonAutomath)?.ToNka();
+                if (_automath != null)
+                {
+                    _automath.ShowInfo();
+                    Console.WriteLine();
+                    _automath.ShowTable();
+                }
+            }
+            else
+            {
+                MessageBox.Show("Преобразование в НКА возможно только для НКА с эпсилон-переходами.");
+            }
+        }
+
         private void rbFile_Checked(object sender, RoutedEventArgs e)
         {
             if (spFileInput != null)
@@ -61,7 +106,6 @@ namespace WpfAutomaton
                 spManualInput.Visibility = Visibility.Collapsed;
         }
 
-        // При выборе режима "Ввести вручную" – наоборот
         private void rbManual_Checked(object sender, RoutedEventArgs e)
         {
             if (spManualInput != null)
@@ -70,16 +114,14 @@ namespace WpfAutomaton
                 spFileInput.Visibility = Visibility.Collapsed;
         }
 
-        // Кнопка для установки пути к файлу по умолчанию
         private void btnDefaultFile_Click(object sender, RoutedEventArgs e)
         {
-            txtFilePath.Text = "Resources/example.txt";
+            txtFilePath.Text = "Resources/DefaultAutomath.txt";
         }
 
-        // Загрузка автомата
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
-            txtOutput.Clear(); // Очищаем вывод
+            txtOutput.Clear();
             if (rbFile.IsChecked == true)
             {
                 string filePath = txtFilePath.Text.Trim();
@@ -88,25 +130,24 @@ namespace WpfAutomaton
                     MessageBox.Show("Файл не найден!");
                     return;
                 }
-                _automaton = Automaton.CreateFromFile(filePath);
+                _automath = Automath.CreateFromFile(filePath);
             }
-            else // Режим "Ввести вручную"
+            else
             {
-                _automaton = CreateAutomatonFromFields();
+                _automath = CreateAutomathFromFields();
             }
 
-            if (_automaton != null)
+            if (_automath != null)
             {
-                _automaton.ShowInfo();
+                _automath.ShowInfo();
                 Console.WriteLine();
-                _automaton.ShowTable();
+                _automath.ShowTable();
             }
         }
 
-        // Обработка входного слова
         private void btnProcess_Click(object sender, RoutedEventArgs e)
         {
-            if (_automaton == null)
+            if (_automath == null)
             {
                 MessageBox.Show("Сначала загрузите автомат.");
                 return;
@@ -114,7 +155,7 @@ namespace WpfAutomaton
 
             string inputWord = txtInputWord.Text.Trim();
             Console.WriteLine();
-            bool result = _automaton.ProcessInputLine(inputWord);
+            bool result = _automath.ProcessInputLine(inputWord);
             Console.WriteLine();
             if (result)
                 Console.WriteLine("Слово принято автоматом.");
@@ -122,13 +163,8 @@ namespace WpfAutomaton
                 Console.WriteLine("Слово отклонено автоматом.");
         }
 
-        /// <summary>
-        /// Создаёт автомат из данных, введённых в поля (ручной режим).
-        /// </summary>
-        /// <returns>Объект Automaton или null при ошибке</returns>
-        private Automaton CreateAutomatonFromFields()
+        private Automath CreateAutomathFromFields()
         {
-            // 1. Получаем тип автомата из ComboBox
             string typeStr = (cbType.SelectedItem as ComboBoxItem)?.Content as string;
             TypeAutomaton type;
             if (typeStr == "DKA")
@@ -143,7 +179,6 @@ namespace WpfAutomaton
                 return null;
             }
 
-            // 2. Получаем состояния
             string[] states = txtStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                              .Select(s => s.Trim()).ToArray();
             if (states.Length == 0)
@@ -152,7 +187,6 @@ namespace WpfAutomaton
                 return null;
             }
 
-            // 3. Получаем алфавит
             string[] inputs = txtAlphabet.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                               .Select(s => s.Trim()).ToArray();
             if (inputs.Length == 0)
@@ -161,7 +195,6 @@ namespace WpfAutomaton
                 return null;
             }
 
-            // 4. Начальное состояние
             string initState = txtInitialState.Text.Trim();
             if (string.IsNullOrEmpty(initState))
             {
@@ -169,7 +202,6 @@ namespace WpfAutomaton
                 return null;
             }
 
-            // 5. Финальные состояния
             string[] finalStates = txtFinalStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                                       .Select(s => s.Trim()).ToArray();
             if (finalStates.Length == 0)
@@ -178,9 +210,7 @@ namespace WpfAutomaton
                 return null;
             }
 
-            // 6. Таблица переходов
-            // Ожидается, что количество строк таблицы совпадает с количеством состояний.
-            var transitions = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>();
+            var transitions = new Dictionary<string, System.Collections.Generic.List<string>>();
             string[] lines = txtTransitions.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             if (lines.Length != states.Length)
             {
@@ -198,15 +228,14 @@ namespace WpfAutomaton
                 transitions.Add(states[i], parts.ToList());
             }
 
-            // 7. Создаём автомат нужного типа
             switch (type)
             {
                 case TypeAutomaton.DKA:
-                    return new DeterministicAutomaton(states, inputs, finalStates, initState, transitions);
+                    return new DkaAutomath(states, inputs, finalStates, initState, transitions);
                 case TypeAutomaton.NKA:
-                    return new NonDeterministicAutomaton(states, inputs, finalStates, initState, transitions);
+                    return new DnaAutomath(states, inputs, finalStates, initState, transitions);
                 case TypeAutomaton.ENKA:
-                    return new EpsilonAutomaton(states, inputs, finalStates, initState, transitions);
+                    return new DnaEpsilonAutomath(states, inputs, finalStates, initState, transitions);
                 default:
                     return null;
             }

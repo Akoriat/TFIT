@@ -7,8 +7,8 @@ namespace Lab0
     {
         static void Main(string[] args)
         {
-            string path = @"Resources\example.txt";
-            Automaton automaton = Automaton.CreateFromFile(path);
+            string path = @"Resources\DefaultAutomath.txt";
+            Automath automaton = Automath.CreateFromFile(path);
             if (automaton == null)
                 return;
 
@@ -20,11 +20,10 @@ namespace Lab0
             string inLine = Console.ReadLine();
             automaton.ProcessInputLine(inLine);
 
-            // Если автомат – НКА, выполняем преобразование в ДКА
             if (automaton.Type == TypeAutomaton.NKA)
             {
-                NonDeterministicAutomaton nka = automaton as NonDeterministicAutomaton;
-                DeterministicAutomaton dka = nka.ToDeterministic();
+                DnaAutomath nka = automaton as DnaAutomath;
+                DkaAutomath dka = nka.ToDka();
                 if (dka != null)
                 {
                     dka.ShowInfo();
@@ -32,11 +31,10 @@ namespace Lab0
                 }
             }
 
-            // Если автомат – ЕНКА, выполняем преобразование в "обычный" НКА
             if (automaton.Type == TypeAutomaton.ENKA)
             {
-                EpsilonAutomaton enka = automaton as EpsilonAutomaton;
-                NonDeterministicAutomaton nka = enka.ToNonDeterministic();
+                DnaEpsilonAutomath enka = automaton as DnaEpsilonAutomath;
+                DnaAutomath nka = enka.ToNka();
                 nka.ShowInfo();
                 nka.ShowTable();
             }

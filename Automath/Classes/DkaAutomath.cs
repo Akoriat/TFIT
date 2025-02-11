@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Lab0.Classes
 {
-    public class DeterministicAutomaton : Automaton
+    public class DkaAutomath : Automath
     {
-        public DeterministicAutomaton(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
+        public DkaAutomath(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
             : base(TypeAutomaton.DKA, states, inputs, finalStates, initState, transitions)
         {
         }

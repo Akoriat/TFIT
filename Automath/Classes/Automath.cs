@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Lab0.Classes
 {
-    public abstract class Automaton
+    public abstract class Automath
     {
         public TypeAutomaton Type { get; protected set; }
         protected string[] States;
@@ -15,8 +15,7 @@ namespace Lab0.Classes
         protected Dictionary<string, List<string>> Transitions;
         protected bool IsInitiatedCorrectly;
 
-        // Конструктор для инициализации из параметров
-        protected Automaton(TypeAutomaton type, string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
+        protected Automath(TypeAutomaton type, string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
         {
             Type = type;
             States = states;
@@ -27,13 +26,7 @@ namespace Lab0.Classes
             IsInitiatedCorrectly = true;
         }
 
-        /// <summary>
-        /// Фабричный метод – создаёт автомат из файла.
-        /// Формат файла: первая строка задаёт тип ("DKA", "NKA" или "NKA-E"),
-        /// далее идут строки с определениями: Q: (состояния), S: (алфавит), Q0: (начальное), F: (финальные)
-        /// и после строки, начинающейся с "Table", – таблица переходов.
-        /// </summary>
-        public static Automaton CreateFromFile(string path)
+        public static Automath CreateFromFile(string path)
         {
             using (StreamReader file = new StreamReader(path))
             {
@@ -93,13 +86,12 @@ namespace Lab0.Classes
                         finalStates = line.Split(',');
                         gotFinalStates = true;
                     }
-                    else if (line.StartsWith("Table") && gotStates && gotInputs)
+                    else if (line.StartsWith("TT:") && gotStates && gotInputs)
                     {
                         for (int i = 0; i < states.Length; i++)
                         {
                             line = file.ReadLine();
                             string[] tempStates = line.Split(' ');
-                            // Проверяем, что все состояния из таблицы определены
                             foreach (string state in tempStates)
                             {
                                 if (!states.ToList().Contains(state))
@@ -127,24 +119,20 @@ namespace Lab0.Classes
 
                 Console.WriteLine($"Автомат считан из файла {path}");
 
-                // Создаём нужный класс-наследник по типу автомата
                 switch (type)
                 {
                     case TypeAutomaton.DKA:
-                        return new DeterministicAutomaton(states, inputs, finalStates, initState, transitions);
+                        return new DkaAutomath(states, inputs, finalStates, initState, transitions);
                     case TypeAutomaton.NKA:
-                        return new NonDeterministicAutomaton(states, inputs, finalStates, initState, transitions);
+                        return new DnaAutomath(states, inputs, finalStates, initState, transitions);
                     case TypeAutomaton.ENKA:
-                        return new EpsilonAutomaton(states, inputs, finalStates, initState, transitions);
+                        return new DnaEpsilonAutomath(states, inputs, finalStates, initState, transitions);
                     default:
                         return null;
                 }
             }
         }
 
-        /// <summary>
-        /// Выводит общую информацию об автомате.
-        /// </summary>
         public void ShowInfo()
         {
             if (IsInitiatedCorrectly)
@@ -198,9 +186,6 @@ namespace Lab0.Classes
             }
         }
 
-        /// <summary>
-        /// Выводит таблицу переходов.
-        /// </summary>
         public void ShowTable()
         {
             if (IsInitiatedCorrectly)
@@ -213,11 +198,9 @@ namespace Lab0.Classes
                 {
                     if (i == 0)
                     {
-                        // Заголовочная строка
                         for (int j = 0; j < Inputs.Length + 1; j++)
                         {
                             if (j == 0)
-                                // Выводим первую ячейку без двоеточия
                                 Console.Write("{0,-" + (maxLength + 2) + "}\t", "");
                             else
                                 Console.Write("|{0,-" + (maxLength + 1) + "}", Inputs[j - 1]);
@@ -225,7 +208,6 @@ namespace Lab0.Classes
                     }
                     else
                     {
-                        // Строки с данными автомата
                         for (int j = 0; j < Inputs.Length + 1; j++)
                         {
                             if (j == 0)
@@ -256,7 +238,6 @@ namespace Lab0.Classes
 
 
 
-        // Вспомогательный метод для расчёта максимальной длины строки в таблице переходов.
         protected int MaxLengthForTable()
         {
             int maxLength = 0;
@@ -271,10 +252,6 @@ namespace Lab0.Classes
             return maxLength;
         }
 
-        /// <summary>
-        /// Абстрактный метод для обработки входной строки.
-        /// Каждый наследник реализует свою логику.
-        /// </summary>
         public abstract bool ProcessInputLine(string word);
     }
 }
