@@ -84,7 +84,7 @@ namespace WpfAutomath
 
             if (_automath.Type == TypeAutomaton.ENKA)
             {
-                _automath = (_automath as DnaEpsilonAutomath)?.ToNka();
+                _automath = (_automath as NkaEpsilonAutomath)?.ToNka();
                 if (_automath != null)
                 {
                     _automath.ShowInfo();
@@ -165,6 +165,7 @@ namespace WpfAutomath
 
         private Automath CreateAutomathFromFields()
         {
+            // Определение типа автомата
             string typeStr = (cbType.SelectedItem as ComboBoxItem)?.Content as string;
             TypeAutomaton type;
             if (typeStr == "DKA")
@@ -179,6 +180,7 @@ namespace WpfAutomath
                 return null;
             }
 
+            // Получение состояний
             string[] states = txtStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                              .Select(s => s.Trim()).ToArray();
             if (states.Length == 0)
@@ -187,6 +189,7 @@ namespace WpfAutomath
                 return null;
             }
 
+            // Получение алфавита
             string[] inputs = txtAlphabet.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                               .Select(s => s.Trim()).ToArray();
             if (inputs.Length == 0)
@@ -195,6 +198,7 @@ namespace WpfAutomath
                 return null;
             }
 
+            // Получение начального состояния
             string initState = txtInitialState.Text.Trim();
             if (string.IsNullOrEmpty(initState))
             {
@@ -202,6 +206,7 @@ namespace WpfAutomath
                 return null;
             }
 
+            // Получение финальных состояний
             string[] finalStates = txtFinalStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                                       .Select(s => s.Trim()).ToArray();
             if (finalStates.Length == 0)
@@ -210,13 +215,15 @@ namespace WpfAutomath
                 return null;
             }
 
-            var transitions = new Dictionary<string, System.Collections.Generic.List<string>>();
+            // Получение таблицы переходов
+            var transitions = new Dictionary<string, List<string>>();
             string[] lines = txtTransitions.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             if (lines.Length != states.Length)
             {
                 MessageBox.Show("Количество строк в таблице переходов должно совпадать с количеством состояний.");
                 return null;
             }
+
             for (int i = 0; i < states.Length; i++)
             {
                 string[] parts = lines[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -225,9 +232,27 @@ namespace WpfAutomath
                     MessageBox.Show($"В строке для состояния {states[i]} количество переходов ({parts.Length}) не совпадает с количеством символов алфавита ({inputs.Length}).");
                     return null;
                 }
-                transitions.Add(states[i], parts.ToList());
+
+                // Обработка множественных состояний (например, {2,3})
+                List<string> transitionList = new List<string>();
+                foreach (string part in parts)
+                {
+                    if (part.StartsWith("{") && part.EndsWith("}"))
+                    {
+                        // Убираем фигурные скобки и добавляем как одно значение
+                        transitionList.Add(part.Trim('{', '}'));
+                    }
+                    else
+                    {
+                        // Одиночное состояние
+                        transitionList.Add(part);
+                    }
+                }
+
+                transitions.Add(states[i], transitionList);
             }
 
+            // Создание автомата в зависимости от типа
             switch (type)
             {
                 case TypeAutomaton.DKA:
@@ -235,7 +260,7 @@ namespace WpfAutomath
                 case TypeAutomaton.NKA:
                     return new DnaAutomath(states, inputs, finalStates, initState, transitions);
                 case TypeAutomaton.ENKA:
-                    return new DnaEpsilonAutomath(states, inputs, finalStates, initState, transitions);
+                    return new NkaEpsilonAutomath(states, inputs, finalStates, initState, transitions);
                 default:
                     return null;
             }

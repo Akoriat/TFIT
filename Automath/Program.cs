@@ -33,7 +33,7 @@ namespace Lab0
 
             if (automaton.Type == TypeAutomaton.ENKA)
             {
-                DnaEpsilonAutomath enka = automaton as DnaEpsilonAutomath;
+                NkaEpsilonAutomath enka = automaton as NkaEpsilonAutomath;
                 DnaAutomath nka = enka.ToNka();
                 nka.ShowInfo();
                 nka.ShowTable();

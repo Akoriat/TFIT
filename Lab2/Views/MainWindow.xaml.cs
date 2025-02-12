@@ -13,9 +13,6 @@ using Lab2.Services;
 
 namespace Lab2
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -23,7 +20,6 @@ namespace Lab2
             InitializeComponent();
         }
 
-        // Обработчик нажатия кнопки "Разобрать"
         private void ParseButton_Click(object sender, RoutedEventArgs e)
         {
             string input = InputTextBox.Text;
@@ -31,7 +27,9 @@ namespace Lab2
 
             try
             {
-                tokenList = Lexer.Tokenize(input);
+                LexAnalyzer analyzer = new LexAnalyzer();
+                analyzer.Analyze(input);
+                tokenList = analyzer.Tokens;
             }
             catch (Exception ex)
             {
@@ -61,7 +59,6 @@ namespace Lab2
                 ResultTextBlock.Foreground = Brushes.Red;
             }
 
-            // Вывод лога этапов разбора
             ParseLogTextBox.Text = Parser.GetParseLog();
         }
     }

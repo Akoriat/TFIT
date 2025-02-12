@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Lab0.Classes
 {
-    public class DnaEpsilonAutomath : Automath
+    public class NkaEpsilonAutomath : Automath
     {
-        public DnaEpsilonAutomath(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
+        public NkaEpsilonAutomath(string[] states, string[] inputs, string[] finalStates, string initState, Dictionary<string, List<string>> transitions)
             : base(TypeAutomaton.ENKA, states, inputs, finalStates, initState, transitions)
         {
         }

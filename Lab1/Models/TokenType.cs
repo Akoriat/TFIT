@@ -11,14 +11,13 @@
         Or,
         Identifier,
         Constant,
-        RelOp,
-        Equal,
-        Assigment,
+        Rel,
+        As,
         Plus,
         Minus,
         Multiply,
         Divide,
-        Semicolon,
+        Delimiter,
         Unknown
     }
 }

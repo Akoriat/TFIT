@@ -5,33 +5,26 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- метка ввода -->
             <RowDefinition Height="150"/>
-            <!-- TextBox для ввода кода -->
             <RowDefinition Height="Auto"/>
-            <!-- кнопка Analyze -->
             <RowDefinition Height="*"/>
-            <!-- вывод результатов -->
         </Grid.RowDefinitions>
 
-        <!-- Метка для ввода -->
         <TextBlock Grid.Row="0" Text="Input Code:" FontWeight="Bold" Margin="0,0,0,5"/>
 
-        <!-- Многострочный TextBox для ввода исходного кода -->
         <TextBox x:Name="InputTextBox" Grid.Row="1" AcceptsReturn="True" 
                  VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" />
 
-        <!-- Кнопка запуска анализа -->
         <Button x:Name="AnalyzeButton" Grid.Row="2" Content="Analyze" 
                 Margin="0,5,0,5" Width="100" HorizontalAlignment="Left"
                 Click="AnalyzeButton_Click"/>
 
-        <!-- Вывод результатов – лексем, идентификаторов и констант -->
         <TabControl Grid.Row="3">
             <TabItem Header="Tokens">
                 <DataGrid x:Name="TokensDataGrid" AutoGenerateColumns="False" IsReadOnly="True">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Pos" Binding="{Binding Position}" Width="60" />
+                        <DataGridTextColumn Header="StartPos" Binding="{Binding StartPos}" Width="60" />
+                        <DataGridTextColumn Header="EndPos" Binding="{Binding EndPos}" Width="60" />
                         <DataGridTextColumn Header="Lexeme" Binding="{Binding Lexeme}" Width="*" />
                         <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="120" />
                     </DataGrid.Columns>

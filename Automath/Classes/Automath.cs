@@ -91,10 +91,34 @@ namespace Lab0.Classes
                         for (int i = 0; i < states.Length; i++)
                         {
                             line = file.ReadLine();
+                            if (line == null)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("Ошибка! Недостаточно строк в таблице переходов.");
+                                Console.ResetColor();
+                                emergencyStop = true;
+                                break;
+                            }
+
+                            // Обработка множественных состояний (например, {2,3})
                             string[] tempStates = line.Split(' ');
+                            List<string> transitionList = new List<string>();
+
                             foreach (string state in tempStates)
                             {
-                                if (!states.ToList().Contains(state))
+                                if (state.StartsWith("{") && state.EndsWith("}"))
+                                {
+                                    // Убираем фигурные скобки и добавляем как одно состояние
+                                    transitionList.Add(state.Trim('{', '}'));
+                                }
+                                else
+                                {
+                                    // Одиночное состояние
+                                    transitionList.Add(state);
+                                }
+
+                                // Проверка, что состояние существует
+                                if (!state.StartsWith("{") && !states.Contains(state) && state != "~")
                                 {
                                     Console.ForegroundColor = ConsoleColor.Red;
                                     Console.WriteLine($"Ошибка! Состояние '{state}', указанное в таблице переходов, не определено!");
@@ -103,7 +127,11 @@ namespace Lab0.Classes
                                     break;
                                 }
                             }
-                            transitions.Add(states[i], tempStates.ToList());
+
+                            if (emergencyStop)
+                                break;
+
+                            transitions.Add(states[i], transitionList);
                         }
                         gotTransitions = true;
                     }
@@ -126,7 +154,7 @@ namespace Lab0.Classes
                     case TypeAutomaton.NKA:
                         return new DnaAutomath(states, inputs, finalStates, initState, transitions);
                     case TypeAutomaton.ENKA:
-                        return new DnaEpsilonAutomath(states, inputs, finalStates, initState, transitions);
+                        return new NkaEpsilonAutomath(states, inputs, finalStates, initState, transitions);
                     default:
                         return null;
                 }
@@ -194,38 +222,52 @@ namespace Lab0.Classes
 
                 Console.WriteLine("Таблица переходов автомата:");
 
-                for (int i = 0; i < States.Length + 1; i++)
+                // Вывод заголовка таблицы
+                for (int j = 0; j < Inputs.Length + 1; j++)
                 {
-                    if (i == 0)
-                    {
-                        for (int j = 0; j < Inputs.Length + 1; j++)
-                        {
-                            if (j == 0)
-                                Console.Write("{0,-" + (maxLength + 2) + "}\t", "");
-                            else
-                                Console.Write("|{0,-" + (maxLength + 1) + "}", Inputs[j - 1]);
-                        }
-                    }
+                    if (j == 0)
+                        Console.Write("{0,-" + (maxLength + 2) + "}\t", "");
                     else
+                        Console.Write("|{0,-" + (maxLength + 1) + "}", Inputs[j - 1]);
+                }
+                Console.WriteLine();
+
+                // Вывод строк таблицы
+                for (int i = 0; i < States.Length; i++)
+                {
+                    for (int j = 0; j < Inputs.Length + 1; j++)
                     {
-                        for (int j = 0; j < Inputs.Length + 1; j++)
+                        if (j == 0)
                         {
-                            if (j == 0)
-                            {
-                                if (States[i - 1] == InitState && FinalStates.Contains(States[i - 1]))
-                                    Console.Write("->*{0,-" + (maxLength) + "}: \t", States[i - 1]);
-                                else if (States[i - 1] == InitState)
-                                    Console.Write("->{0,-" + (maxLength + 1) + "}: \t", States[i - 1]);
-                                else if (FinalStates.Contains(States[i - 1]))
-                                    Console.Write(" *{0,-" + (maxLength + 1) + "}: \t", States[i - 1]);
-                                else
-                                    Console.Write("  {0,-" + (maxLength + 1) + "}: \t", States[i - 1]);
-                            }
+                            // Вывод состояния с маркерами начального и финального состояний
+                            if (States[i] == InitState && FinalStates.Contains(States[i]))
+                                Console.Write("->*{0,-" + (maxLength)     + "}: \t", States[i]);
+                            else if (States[i] == InitState)
+                                Console.Write("->{0,-" + (maxLength + 1) + "}: \t", States[i]);
+                            else if (FinalStates.Contains(States[i]))
+                                Console.Write("*{0,-" + (maxLength + 1) + "}: \t", States[i]);
                             else
-                                Console.Write("|{0,-" + (maxLength + 1) + "}", Transitions[States[i - 1]][j - 1]);
+                                Console.Write("{0,-" + (maxLength + 1) + "}: \t", States[i]);
+                        }
+                        else
+                        {
+                            // Вывод переходов
+                            string transition = Transitions[States[i]][j - 1];
+                            if (transition.StartsWith("{") && transition.EndsWith("}"))
+                            {
+                                // Убираем фигурные скобки для красивого вывода
+                                transition = transition.Trim('{', '}');
+                            }
+                            Console.Write("|{0,-" + (maxLength + 1) + "}", transition);
                         }
                     }
                     Console.WriteLine();
+                }
+
+                // Вывод информации о ε-переходах (если это НКА с ε-переходами)
+                if (Type == TypeAutomaton.ENKA)
+                {
+                    Console.WriteLine("\nПримечание: Последний столбец таблицы соответствует ε-переходам.");
                 }
             }
             else

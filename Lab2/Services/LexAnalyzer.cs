@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using Lab1.Models;
+using System.Text;
+using Lab2.Models;
 
-namespace Lab1.Services
+namespace Lab2.Services
 {
 
     public class LexAnalyzer
@@ -86,7 +86,7 @@ namespace Lab1.Services
                         }
                         else
                         {
-                            Token token = new Token { Type = TokenType.Rel, Lexeme = "<", StartPos = pos, EndPos = pos};
+                            Token token = new Token { Type = TokenType.Rel, Lexeme = "<", StartPos = pos, EndPos = pos };
                             Tokens.Add(token);
                             pos++;
                             continue;
