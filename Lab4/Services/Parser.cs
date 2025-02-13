@@ -1,361 +1,350 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using Lab4.Models;
 
 namespace Lab4.Services
 {
-    public class Parser
+    public static class Parser
     {
-        private readonly List<Token> _tokens;
-        private int _pos;
+        private static List<Token> tokens;
+        private static int currentIndex;
+        private static StringBuilder parseLog = new StringBuilder();
+        private static int indentLevel = 0;
 
-        private IdentifierTable _idTable;
-        private ConstantTable _constTable;
+        public static List<PostfixEntry> Postfix { get; private set; } = new List<PostfixEntry>();
+        public static List<string> Identifiers { get; set; }
+        public static List<string> Constants { get; set; }
 
-        private List<PostfixEntry> _postfix = new List<PostfixEntry>();
+        private static Token CurrentToken => currentIndex < tokens.Count ? tokens[currentIndex] : null;
+        public static string GetParseLog() => parseLog.ToString();
 
-        public Parser(List<Token> tokens, IdentifierTable idTable, ConstantTable cTable)
+        private static void Log(string message)
         {
-            _tokens = tokens;
-            _pos = 0;
-            _idTable = idTable;
-            _constTable = cTable;
+            parseLog.AppendLine(new string(' ', indentLevel * 2) + message);
         }
 
-        private Token Current => _pos < _tokens.Count ? _tokens[_pos] : null;
-
-        private bool Error(string msg)
+        private static void Error(string msg, int pos)
         {
-            Console.WriteLine($"Ошибка: {msg} (pos={Current?.Position}, lex='{Current?.Lexeme}')");
-            return false;
+            throw new Exception($"Ошибка на позиции {pos}: {msg}");
         }
 
-        private void NextToken()
+        private static int WriteCmd(ECmd cmd)
         {
-            if (_pos < _tokens.Count) _pos++;
+            Postfix.Add(new PostfixEntry { Type = EEntryType.etCmd, Index = (int)cmd });
+            return Postfix.Count - 1;
         }
 
-        //------------------------------------------------------------------------
-        // Методы записи в ПОЛИЗ
-        //------------------------------------------------------------------------
-
-        private int WriteCmd(ECmd cmd)
+        private static int WriteVar(int varIndex)
         {
-            int idx = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etCmd, (int)cmd));
-            return idx;
+            Postfix.Add(new PostfixEntry { Type = EEntryType.etVar, Index = varIndex });
+            return Postfix.Count - 1;
         }
 
-        /// <summary>
-        /// Записываем переменную (индекс) для левой части присваивания
-        /// (в интерпретаторе это case etVar => push index).
-        /// </summary>
-        private int WriteVar(int varIndex)
+        private static int WriteConst(int constIndex)
         {
-            int idx = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etVar, varIndex));
-            return idx;
+            Postfix.Add(new PostfixEntry { Type = EEntryType.etConst, Index = constIndex });
+            return Postfix.Count - 1;
         }
 
-        /// <summary>
-        /// Записываем константу
-        /// </summary>
-        private int WriteConst(int cIndex)
+        private static int WriteCmdPtr(int ptr)
         {
-            int idx = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etConst, cIndex));
-            return idx;
+            Postfix.Add(new PostfixEntry { Type = EEntryType.etCmdPtr, Index = ptr });
+            return Postfix.Count - 1;
         }
 
-        /// <summary>
-        /// Записываем адрес (число) для переходов/LOAD
-        /// </summary>
-        private int WriteCmdPtr(int val)
+        private static void SetCmdPtr(int ind, int ptr)
         {
-            int idx = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, val));
-            return idx;
+            Postfix[ind] = new PostfixEntry { Type = EEntryType.etCmdPtr, Index = ptr };
         }
 
-        private void SetCmdPtr(int atIndex, int ptrValue)
+        
+        private static void SwapLastTwoEntries() // для обработки оператора >
         {
-            PostfixEntry entry = _postfix[atIndex];
-            entry.index = ptrValue;
-            _postfix[atIndex] = entry;
+            int count = Postfix.Count;
+            if (count < 2) return;
+            var temp = Postfix[count - 1];
+            Postfix[count - 1] = Postfix[count - 2];
+            Postfix[count - 2] = temp;
         }
 
-        //------------------------------------------------------------------------
-        // НОВЫЙ метод: WriteLoadVar(varIndex)
-        // -> генерируем (LOAD), (CmdPtr(varIndex))
-        //------------------------------------------------------------------------
-        private int WriteLoadVar(int varIndex)
+        public static bool DoUntilStatement()
         {
-            // 1) etCmd(LOAD)
-            int loadPos = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etCmd, (int)ECmd.LOAD));
-
-            // 2) etCmdPtr(varIndex)
-            int ptrPos = _postfix.Count;
-            _postfix.Add(new PostfixEntry(EEntryType.etCmdPtr, varIndex));
-
-            return loadPos;
-        }
-
-        //------------------------------------------------------------------------
-        // Главная точка входа
-        //------------------------------------------------------------------------
-        public bool ParseProgram()
-        {
-            // Для простоты: парсим 1 оператор 
-            if (!ParseStatement()) return false;
-
-            // Если хотим много операторов - можно цикл while ...
-            if (_pos < _tokens.Count)
+            Log("Вход в DoUntilStatement, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            indentLevel++;
+            if (CurrentToken == null || CurrentToken.Type != TokenType.Do)
             {
-                Console.WriteLine("Предупреждение: есть лишние лексемы после первого оператора");
+                Error("Ожидалось 'do'", CurrentToken != null ? CurrentToken.StartPos : -1);
+                return false;
             }
-            return true;
-        }
+            currentIndex++;
 
-        /// <summary>
-        /// Определяем, какой оператор: while/do/присваивание
-        /// </summary>
-        private bool ParseStatement()
-        {
-            if (Current == null)
-                return Error("Ожидался оператор, но вход закончился");
-
-            if (Current.Type == TokenType.While)
+            if (CurrentToken == null || CurrentToken.Type != TokenType.Until)
             {
-                return ParseWhileStatement();
+                Error("Ожидалось 'until'", CurrentToken != null ? CurrentToken.StartPos : -1);
+                return false;
             }
-            else if (Current.Type == TokenType.Do)
-            {
-                return ParseDoUntilStatement();
-            }
-            else if (Current.Type == TokenType.Var)
-            {
-                // присваивание
-                return ParseAssignStatement();
-            }
-            else
-            {
-                return Error($"Неизвестный оператор: {Current.Lexeme}");
-            }
-        }
+            currentIndex++;
 
-        //------------------------------------------------------------------------
-        // while <Condition> do <Statement> end
-        //------------------------------------------------------------------------
-        public bool ParseWhileStatement()
-        {
-            if (Current == null || Current.Type != TokenType.While)
-                return Error("Ожидался 'while'");
-            NextToken();
-
-            int startPos = _postfix.Count;
-
-            // <Condition>
-            if (!ParseCondition()) return false;
-
-            // вставляем JZ
-            int jzPtrIndex = WriteCmdPtr(-1);
-            WriteCmd(ECmd.JZ);
-
-            // do
-            if (Current == null || Current.Type != TokenType.Do)
-                return Error("Ожидался 'do'");
-            NextToken();
-
-            // тело цикла
-            if (!ParseStatement()) return false;
-
-            // end
-            if (Current == null || Current.Type != TokenType.End)
-                return Error("Ожидался 'end'");
-            NextToken();
-
-            // Переход назад
-            WriteCmdPtr(startPos);
-            int jmpPos = WriteCmd(ECmd.JMP);
-
-            // fix JZ
-            SetCmdPtr(jzPtrIndex, jmpPos + 1);
-
-            return true;
-        }
-
-        //------------------------------------------------------------------------
-        // do until <Condition> <Operators> loop
-        //------------------------------------------------------------------------
-        private bool ParseDoUntilStatement()
-        {
-            // do
-            if (Current == null || Current.Type != TokenType.Do)
-                return Error("Ожидался 'do'");
-            NextToken();
-
-            // until
-            if (Current == null || Current.Type != TokenType.Until)
-                return Error("Ожидался 'until'");
-            NextToken();
-
-            int startPos = _postfix.Count;
-
-            // <Condition>
-            if (!ParseCondition()) return false;
-
-            // NOT
+            int loopStart = Postfix.Count;
+            if (!LogicalExpression())
+                return false;
             WriteCmd(ECmd.NOT);
-
-            // JZ
-            int jzPtrIndex = WriteCmdPtr(-1);
+            int exitJumpIndex = WriteCmdPtr(-1);
             WriteCmd(ECmd.JZ);
 
-            // тело цикла
-            if (!ParseStatement()) return false;
+            if (!Operators())
+                return false;
 
-            // loop
-            if (Current == null || Current.Type != TokenType.Loop)
-                return Error("Ожидался 'loop'");
-            NextToken();
+            WriteCmdPtr(loopStart);
+            int jmpIndex = WriteCmd(ECmd.JMP);
+            SetCmdPtr(exitJumpIndex, jmpIndex + 1);
 
-            // Переход назад
-            WriteCmdPtr(startPos);
-            int jmpPos = WriteCmd(ECmd.JMP);
-
-            // Fix JZ
-            SetCmdPtr(jzPtrIndex, jmpPos + 1);
-
-            return true;
-        }
-
-        //------------------------------------------------------------------------
-        // Присваивание: x = <ArithExpr>
-        //------------------------------------------------------------------------
-        private bool ParseAssignStatement()
-        {
-            if (Current == null || Current.Type != TokenType.Var)
-                return Error("Ожидался идентификатор");
-            int vIndex = Current.Index;
-            NextToken();
-
-            if (Current == null || Current.Type != TokenType.As)
-                return Error("Ожидался '='");
-            NextToken();
-
-            // слева varIndex
-            WriteVar(vIndex);
-
-            // правая часть
-            if (!ParseArithExpr()) return false;
-
-            // SET
-            WriteCmd(ECmd.SET);
-            return true;
-        }
-
-        //------------------------------------------------------------------------
-        // <ArithExpr> -> <Operand> { Ao <Operand> }
-        //------------------------------------------------------------------------
-        private bool ParseArithExpr()
-        {
-            if (!ParseOperand()) return false;
-
-            while (Current != null && Current.Type == TokenType.Ao)
+            if (CurrentToken == null || CurrentToken.Type != TokenType.Loop)
             {
-                ECmd cmd = ECmd.ADD;
-                if (Current.Lexeme == "-")
-                    cmd = ECmd.SUB;
-                NextToken();
+                Error("Ожидалось 'loop'", CurrentToken != null ? CurrentToken.StartPos : -1);
+                return false;
+            }
+            currentIndex++;
 
-                if (!ParseOperand()) return false;
+            indentLevel--;
+            Log("Выход из DoUntilStatement, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            if (currentIndex < tokens.Count)
+            {
+                Error("Лишние токены после 'loop'", CurrentToken != null ? CurrentToken.StartPos : -1);
+                return false;
+            }
+            return true;
+        }
+
+        public static bool LogicalExpression()
+        {
+            Log("Вход в LogicalExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            indentLevel++;
+
+            bool hasNot = false;
+            if (CurrentToken != null && CurrentToken.Type == TokenType.Not)
+            {
+                hasNot = true;
+                Log("Найден 'not'");
+                currentIndex++;
+            }
+
+            if (!ComparisonExpression())
+                return false;
+
+            if (hasNot)
+            {
+                WriteCmd(ECmd.NOT);
+            }
+
+            while (CurrentToken != null &&
+                   (CurrentToken.Type == TokenType.And || CurrentToken.Type == TokenType.Or))
+            {
+                Token op = CurrentToken;
+                Log("Найден логический оператор: " + op.ToString());
+                currentIndex++;
+
+                if (!ComparisonExpression())
+                    return false;
+
+                if (op.Type == TokenType.And)
+                    WriteCmd(ECmd.AND);
+                else if (op.Type == TokenType.Or)
+                    WriteCmd(ECmd.OR);
+            }
+            indentLevel--;
+            Log("Выход из LogicalExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            return true;
+        }
+
+        public static bool ComparisonExpression()
+        {
+            Log("Вход в ComparisonExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            indentLevel++;
+            if (!Operand())
+                return false;
+
+            if (CurrentToken != null && CurrentToken.Type == TokenType.Rel)
+            {
+                string op = CurrentToken.Lexeme;
+                Log("Найден оператор сравнения: " + op);
+                currentIndex++;
+                if (!Operand())
+                    return false;
+
+                ECmd cmd;
+                if (op == "<")
+                    cmd = ECmd.CMPL;
+                else if (op == ">")
+                {
+                    SwapLastTwoEntries();
+                    cmd = ECmd.CMPL;
+                }
+                else if (op == "==")
+                    cmd = ECmd.CMPE;
+                else if (op == "<>")
+                    cmd = ECmd.CMPNE;
+                else
+                    cmd = ECmd.CMPL;
+
                 WriteCmd(cmd);
             }
+            indentLevel--;
+            Log("Выход из ComparisonExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
             return true;
         }
 
-        //------------------------------------------------------------------------
-        // <Operand> -> var | const
-        //  теперь var => LOAD varIndex
-        //------------------------------------------------------------------------
-        private bool ParseOperand()
+        public static bool OperatorStmt()
         {
-            if (Current == null)
-                return Error("Ожидался операнд");
-
-            if (Current.Type == TokenType.Var)
+            Log("Вход в OperatorStmt, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            indentLevel++;
+            if (CurrentToken == null)
             {
-                // Чтение значения переменной
-                WriteLoadVar(Current.Index);
-                NextToken();
+                Error("Ожидался оператор", -1);
+                return false;
+            }
+            if (CurrentToken.Type == TokenType.Identifier)
+            {
+                string varName = CurrentToken.Lexeme;
+                int varIndex = Identifiers.IndexOf(varName);
+                Log("Обнаружено присваивание, идентификатор: " + CurrentToken.ToString());
+                WriteVar(varIndex);
+                currentIndex++;
+                if (CurrentToken == null || CurrentToken.Type != TokenType.As)
+                {
+                    Error("Ожидалось '=' в присваивании", CurrentToken != null ? CurrentToken.StartPos : -1);
+                    return false;
+                }
+                Log("Найден '='");
+                currentIndex++;
+                if (!ArithExpr())
+                    return false;
+                WriteCmd(ECmd.SET);
+                indentLevel--;
+                Log("Выход из OperatorStmt (присваивание), токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
                 return true;
             }
-            else if (Current.Type == TokenType.Const)
+            else if (CurrentToken.Type == TokenType.Output)
             {
-                WriteConst(Current.Index);
-                NextToken();
+                Log("Обнаружен оператор вывода: " + CurrentToken.ToString());
+                currentIndex++;
+                if (!Operand())
+                    return false;
+                WriteCmd(ECmd.OUTPUT);
+                indentLevel--;
+                Log("Выход из OperatorStmt (вывод), токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
                 return true;
             }
             else
             {
-                return Error("Ожидался var или const");
+                Error("Ожидалось присваивание или оператор вывода", CurrentToken.StartPos);
+                return false;
             }
         }
 
-        //------------------------------------------------------------------------
-        // Логические выражения
-        //------------------------------------------------------------------------
-        private bool ParseCondition()
+        public static bool ArithExpr()
         {
-            // <LogExpr> { or <LogExpr> }
-            if (!ParseLogExpr()) return false;
-            while (Current != null && Current.Type == TokenType.Or)
+            Log("Вход в ArithExpr, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            indentLevel++;
+            if (!Operand())
+                return false;
+
+            while (CurrentToken != null &&
+                   (CurrentToken.Type == TokenType.Plus ||
+                    CurrentToken.Type == TokenType.Minus ||
+                    CurrentToken.Type == TokenType.Multiply ||
+                    CurrentToken.Type == TokenType.Divide))
             {
-                NextToken();
-                if (!ParseLogExpr()) return false;
-                WriteCmd(ECmd.OR);
-            }
-            return true;
-        }
-
-        private bool ParseLogExpr()
-        {
-            // <RelExpr> { and <RelExpr> }
-            if (!ParseRelExpr()) return false;
-            while (Current != null && Current.Type == TokenType.And)
-            {
-                NextToken();
-                if (!ParseRelExpr()) return false;
-                WriteCmd(ECmd.AND);
-            }
-            return true;
-        }
-
-        private bool ParseRelExpr()
-        {
-            // <Operand> [rel <Operand>]
-            if (!ParseOperand()) return false;
-
-            if (Current != null && Current.Type == TokenType.Rel)
-            {
-                ECmd cmd = ECmd.CMPE;
-                switch (Current.Lexeme)
-                {
-                    case "<": cmd = ECmd.CMPL; break;
-                    case "<=": cmd = ECmd.CMPLE; break;
-                    case "==": cmd = ECmd.CMPE; break;
-                    case "<>": cmd = ECmd.CMPNE; break;
-                }
-                NextToken();
-
-                if (!ParseOperand()) return false;
+                Token op = CurrentToken;
+                Log("Найден арифметический оператор: " + op.ToString());
+                currentIndex++;
+                if (!Operand())
+                    return false;
+                ECmd cmd;
+                if (op.Type == TokenType.Plus)
+                    cmd = ECmd.ADD;
+                else if (op.Type == TokenType.Minus)
+                    cmd = ECmd.SUB;
+                else if (op.Type == TokenType.Multiply)
+                    cmd = ECmd.MUL;
+                else
+                    cmd = ECmd.DIV;
                 WriteCmd(cmd);
             }
+            indentLevel--;
+            Log("Выход из ArithExpr, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
             return true;
         }
 
-        //------------------------------------------------------------------------
-        public IReadOnlyList<PostfixEntry> GetPostfix() => _postfix;
+        public static bool Operand()
+        {
+            Log("Вход в Operand, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            indentLevel++;
+            if (CurrentToken == null)
+            {
+                Error("Ожидался операнд (идентификатор или константа)", -1);
+                return false;
+            }
+            if (CurrentToken.Type == TokenType.Identifier)
+            {
+                string varName = CurrentToken.Lexeme;
+                int varIndex = Identifiers.IndexOf(varName);
+                Log("Найден идентификатор: " + CurrentToken.ToString());
+                WriteVar(varIndex);
+                currentIndex++;
+            }
+            else if (CurrentToken.Type == TokenType.Constant)
+            {
+                string constVal = CurrentToken.Lexeme;
+                int constIndex = Constants.IndexOf(constVal);
+                Log("Найдена константа: " + CurrentToken.ToString());
+                WriteConst(constIndex);
+                currentIndex++;
+            }
+            else
+            {
+                Error("Ожидался идентификатор или константа", CurrentToken.StartPos);
+                return false;
+            }
+            indentLevel--;
+            Log("Выход из Operand, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            return true;
+        }
+
+        public static bool Operators()
+        {
+            Log("Вход в Operators, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            indentLevel++;
+            if (!OperatorStmt())
+                return false;
+
+            while (CurrentToken != null && CurrentToken.Type == TokenType.Delimiter)
+            {
+                Log("Найден символ ';'");
+                currentIndex++;
+                if (!OperatorStmt())
+                    return false;
+            }
+            indentLevel--;
+            Log("Выход из Operators, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            return true;
+        }
+
+        public static bool Parse(List<Token> tokenList, List<string> idTable, List<string> constTable)
+        {
+            tokens = tokenList;
+            Identifiers = idTable;
+            Constants = constTable;
+            currentIndex = 0;
+            parseLog.Clear();
+            indentLevel = 0;
+            Postfix.Clear();
+
+            Log("=== Начало синтаксического анализа ===");
+            bool result = DoUntilStatement();
+            Log("=== Конец синтаксического анализа ===");
+            return result;
+        }
     }
 }

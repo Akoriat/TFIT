@@ -1,219 +1,294 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Text;
 using Lab4.Models;
+
 
 namespace Lab4.Services
 {
-    public class Interpreter
+    public static class Interpreter
     {
-        private readonly List<PostfixEntry> _postfix;
-        private readonly int[] _varValues; // хранит значения всех переменных
-        private readonly Stack<int> _stack;
-        private readonly ConstantTable _constTable;
-
-        public Interpreter(List<PostfixEntry> postfix, int varCount, ConstantTable cTable)
+        private static List<PostfixEntry> Postfix;
+        private static List<string> Identifiers;
+        private static List<string> Constants;
+        private static int pos;
+        private static List<StackElement> stack;
+        private static int[] variables;
+        private static StringBuilder output;
+        private struct StackElement
         {
-            _postfix = postfix;
-            _stack = new Stack<int>();
-            _varValues = new int[varCount];
-            _constTable = cTable;
+            public bool IsVar;   
+            public int VarIndex;
+            public int Value;
         }
 
-        public void Run()
+        private static int GetValue(StackElement se)
         {
-            int pos = 0;
-            while (pos < _postfix.Count)
+            return se.IsVar ? variables[se.VarIndex] : se.Value;
+        }
+
+        private static void Push(StackElement se)
+        {
+            stack.Add(se);
+        }
+
+        private static StackElement Pop()
+        {
+            if (stack.Count == 0)
+                throw new Exception("Ошибка: переполнение стека");
+            StackElement se = stack[stack.Count - 1];
+            stack.RemoveAt(stack.Count - 1);
+            return se;
+        }
+
+        private static void PushElm(PostfixEntry entry)
+        {
+            StackElement se = new StackElement();
+            switch (entry.Type)
             {
-                PostfixEntry e = _postfix[pos];
-                switch (e.type)
-                {
-                    case EEntryType.etCmd:
-                        {
-                            ECmd cmd = (ECmd)e.index;
-                            switch (cmd)
-                            {
-                                // Новая команда LOAD
-                                case ECmd.LOAD:
-                                    {
-                                        // LOAD и следующая запись etCmdPtr(varIndex)
-                                        if (pos + 1 >= _postfix.Count)
-                                            throw new Exception("No CmdPtr after LOAD");
-                                        PostfixEntry nextE = _postfix[pos + 1];
-                                        if (nextE.type != EEntryType.etCmdPtr)
-                                            throw new Exception("LOAD expects next entry = etCmdPtr(varIndex)");
-
-                                        int vIndex = nextE.index;
-                                        if (vIndex < 0 || vIndex >= _varValues.Length)
-                                            throw new Exception($"varIndex={vIndex} вне массива (0..{_varValues.Length - 1})");
-
-                                        int currentVal = _varValues[vIndex];
-                                        _stack.Push(currentVal);
-
-                                        pos += 2;
-                                        continue;
-                                    }
-
-                                case ECmd.JMP:
-                                    {
-                                        if (_stack.Count < 1)
-                                            throw new Exception("Stack underflow on JMP");
-                                        int adr = _stack.Pop();
-                                        pos = adr;
-                                        continue;
-                                    }
-                                case ECmd.JZ:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on JZ");
-                                        int adr = _stack.Pop();
-                                        int val = _stack.Pop();
-                                        if (val == 0)
-                                        {
-                                            pos = adr;
-                                            continue;
-                                        }
-                                    }
-                                    break;
-
-                                case ECmd.SET:
-                                    {
-                                        // stack: [varIndex, val]
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on SET");
-                                        int value = _stack.Pop();
-                                        int varIndex = _stack.Pop();
-
-                                        if (varIndex < 0 || varIndex >= _varValues.Length)
-                                            throw new Exception($"varIndex={varIndex} вне (0..{_varValues.Length - 1})");
-
-                                        _varValues[varIndex] = value;
-                                    }
-                                    break;
-
-                                case ECmd.ADD:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on ADD");
-                                        int v2 = _stack.Pop();
-                                        int v1 = _stack.Pop();
-                                        _stack.Push(v1 + v2);
-                                    }
-                                    break;
-                                case ECmd.SUB:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on SUB");
-                                        int v2 = _stack.Pop();
-                                        int v1 = _stack.Pop();
-                                        _stack.Push(v1 - v2);
-                                    }
-                                    break;
-                                case ECmd.AND:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on AND");
-                                        int v2 = _stack.Pop();
-                                        int v1 = _stack.Pop();
-                                        _stack.Push((v1 != 0 && v2 != 0) ? 1 : 0);
-                                    }
-                                    break;
-                                case ECmd.OR:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on OR");
-                                        int v2 = _stack.Pop();
-                                        int v1 = _stack.Pop();
-                                        _stack.Push((v1 != 0 || v2 != 0) ? 1 : 0);
-                                    }
-                                    break;
-                                case ECmd.NOT:
-                                    {
-                                        if (_stack.Count < 1)
-                                            throw new Exception("Stack underflow on NOT");
-                                        int v = _stack.Pop();
-                                        _stack.Push(v == 0 ? 1 : 0);
-                                    }
-                                    break;
-                                case ECmd.CMPE:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on CMPE");
-                                        int b = _stack.Pop();
-                                        int a = _stack.Pop();
-                                        _stack.Push(a == b ? 1 : 0);
-                                    }
-                                    break;
-                                case ECmd.CMPNE:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on CMPNE");
-                                        int b = _stack.Pop();
-                                        int a = _stack.Pop();
-                                        _stack.Push(a != b ? 1 : 0);
-                                    }
-                                    break;
-                                case ECmd.CMPL:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on CMPL");
-                                        int b = _stack.Pop();
-                                        int a = _stack.Pop();
-                                        _stack.Push(a < b ? 1 : 0);
-                                    }
-                                    break;
-                                case ECmd.CMPLE:
-                                    {
-                                        if (_stack.Count < 2)
-                                            throw new Exception("Stack underflow on CMPLE");
-                                        int b = _stack.Pop();
-                                        int a = _stack.Pop();
-                                        _stack.Push(a <= b ? 1 : 0);
-                                    }
-                                    break;
-                                default:
-                                    throw new Exception($"Неизвестная команда: {cmd}");
-                            }
-                            pos++;
-                        }
-                        break;
-
-                    case EEntryType.etVar:
-                        {
-                            // Это "адрес переменной" (индекс) - нужно для SET 
-                            // => на стеке окажется varIndex.
-                            _stack.Push(e.index);
-                            pos++;
-                        }
-                        break;
-
-                    case EEntryType.etConst:
-                        {
-                            string sVal = _constTable.GetConstant(e.index);
-                            int val = int.Parse(sVal, CultureInfo.InvariantCulture);
-                            _stack.Push(val);
-                            pos++;
-                        }
-                        break;
-
-                    case EEntryType.etCmdPtr:
-                        {
-                            _stack.Push(e.index);
-                            pos++;
-                        }
-                        break;
-                }
+                case EEntryType.etConst:
+                    se.IsVar = false;
+                    se.Value = int.Parse(Constants[entry.Index]);
+                    break;
+                case EEntryType.etVar:
+                    se.IsVar = true;
+                    se.VarIndex = entry.Index;
+                    se.Value = variables[entry.Index];
+                    break;
+                case EEntryType.etCmdPtr:
+                    se.IsVar = false;
+                    se.Value = entry.Index;
+                    break;
             }
+            Push(se);
         }
 
-        public int GetVarValue(int varIndex)
+        private static int PopVal()
         {
-            return _varValues[varIndex];
+            return GetValue(Pop());
         }
 
-        public void SetVarValue(int varIndex, int val)
+        private static void SetVarAndPop(int val)
         {
-            _varValues[varIndex] = val;
+            StackElement se = Pop();
+            if (!se.IsVar)
+                throw new Exception("SET: Ожидалась ссылка на переменную.");
+            variables[se.VarIndex] = val;
+        }
+
+        public static string InterpretWithLogging(List<PostfixEntry> postfix, List<string> idTable, List<string> constTable)
+        {
+            Postfix = postfix;
+            Identifiers = idTable;
+            Constants = constTable;
+            pos = 0;
+            stack = new List<StackElement>();
+            variables = new int[Identifiers.Count];
+            output = new StringBuilder();
+            StringBuilder log = new StringBuilder();
+
+            log.AppendLine("=== Начало интерпретации ===");
+            while (pos < Postfix.Count)
+            {
+                log.AppendLine($"Инструкция {pos}: {Postfix[pos]}");
+                log.AppendLine($"Состояние стека до выполнения: {GetStackState()}");
+                int prevPos = pos;
+                if (Postfix[pos].Type == EEntryType.etCmd)
+                {
+                    ECmd cmd = (ECmd)Postfix[pos].Index;
+                    switch (cmd)
+                    {
+                        case ECmd.JMP:
+                            {
+                                int jumpAddr = PopVal();
+                                log.AppendLine($"Выполняется команда JMP, переход на адрес {jumpAddr}");
+                                pos = jumpAddr;
+                            }
+                            break;
+                        case ECmd.JZ:
+                            {
+                                int addr = PopVal();
+                                int cond = PopVal();
+                                log.AppendLine($"Выполняется команда JZ: условие = {cond}, адрес = {addr}");
+                                if (cond != 0)
+                                {
+                                    pos++;
+                                    log.AppendLine("Условие истинно, переходим к следующей инструкции.");
+                                }
+                                else
+                                {
+                                    pos = addr;
+                                    log.AppendLine("Условие ложно, переход по адресу.");
+                                }
+                            }
+                            break;
+                        case ECmd.SET:
+                            {
+                                int value = PopVal();
+                                SetVarAndPop(value);
+                                log.AppendLine($"Выполняется SET, присваиваем значение {value}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.ADD:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = a + b;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"ADD: {a} + {b} = {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.SUB:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = a - b;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"SUB: {a} - {b} = {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.MUL:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = a * b;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"MUL: {a} * {b} = {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.DIV:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                if (b == 0)
+                                    throw new Exception("Деление на ноль!");
+                                int res = a / b;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"DIV: {a} / {b} = {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.AND:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = (a != 0 && b != 0) ? 1 : 0;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"AND: {a} && {b} = {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.OR:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = (a != 0 || b != 0) ? 1 : 0;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"OR: {a} || {b} = {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.NOT:
+                            {
+                                int a = PopVal();
+                                int res = (a == 0) ? 1 : 0;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"NOT: !{a} = {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.CMPE:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = (a == b) ? 1 : 0;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"CMPE: {a} == {b} ? {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.CMPNE:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = (a != b) ? 1 : 0;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"CMPNE: {a} <> {b} ? {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.CMPL:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = (a < b) ? 1 : 0;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"CMPL: {a} < {b} ? {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.CMPLE:
+                            {
+                                int b = PopVal();
+                                int a = PopVal();
+                                int res = (a <= b) ? 1 : 0;
+                                Push(new StackElement { IsVar = false, Value = res });
+                                log.AppendLine($"CMPLE: {a} <= {b} ? {res}");
+                                pos++;
+                            }
+                            break;
+                        case ECmd.OUTPUT:
+                            {
+                                int val = PopVal();
+                                output.AppendLine(val.ToString());
+                                log.AppendLine($"OUTPUT: выведено значение {val}");
+                                pos++;
+                            }
+                            break;
+                        default:
+                            throw new Exception("Неизвестная команда: " + cmd.ToString());
+                    }
+                }
+                else
+                {
+                    PushElm(Postfix[pos]);
+                    log.AppendLine($"Помещён операнд: {Postfix[pos]}");
+                    pos++;
+                }
+                log.AppendLine($"Состояние стека после выполнения: {GetStackState()}");
+                log.AppendLine($"Текущее состояние переменных: {GetVariablesState()}");
+                log.AppendLine(new string('-', 40));
+            }
+            log.AppendLine("=== Конец интерпретации ===");
+            output.AppendLine("\n=== Лог интерпретации ===");
+            output.AppendLine(log.ToString());
+            return output.ToString();
+        }
+
+        private static string GetStackState()
+        {
+            if (stack.Count == 0)
+                return "<пусто>";
+            StringBuilder sb = new StringBuilder();
+            foreach (var se in stack)
+            {
+                sb.Append(GetValue(se) + " ");
+            }
+            return sb.ToString();
+        }
+
+        private static string GetVariablesState()
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < Identifiers.Count; i++)
+            {
+                sb.Append($"{Identifiers[i]}={variables[i]} ");
+            }
+            return sb.ToString();
         }
     }
 }

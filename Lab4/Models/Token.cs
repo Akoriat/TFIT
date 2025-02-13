@@ -4,20 +4,9 @@
     {
         public TokenType Type { get; set; }
         public string Lexeme { get; set; }
-        public int Position { get; set; }
-        public int Index { get; set; }  // Для Var/Const
+        public int StartPos { get; set; }
+        public int EndPos { get; set; }
 
-        public Token(TokenType type, string lexeme, int pos, int index = -1)
-        {
-            Type = type;
-            Lexeme = lexeme;
-            Position = pos;
-            Index = index;
-        }
-
-        public override string ToString()
-        {
-            return $"{Type}('{Lexeme}') at {Position}";
-        }
+        public override string ToString() => $"{Lexeme} ({Type})";
     }
 }

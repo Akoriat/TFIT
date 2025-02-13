@@ -2,28 +2,22 @@
 {
     public enum TokenType
     {
-        // Операторы цикла
-        While,
         Do,
-        End,
         Until,
         Loop,
-
-        // Логические
+        Output,
+        Not,
         And,
         Or,
-        Rel,     // <, <=, ==, <>
-
-        // Присваивание
-        As,      // '='
-
-        // Арифметические операции (+, -)
-        Ao,
-
-        // Идентификаторы, Константы
-        Var,
-        Const,
-
+        Identifier,
+        Constant,
+        Rel,
+        As,
+        Plus,
+        Minus,
+        Multiply,
+        Divide,
+        Delimiter,
         Unknown
     }
 }

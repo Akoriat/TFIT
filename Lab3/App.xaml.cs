@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
+using Lab3.Views;
 
 namespace Lab3
 {

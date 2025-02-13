@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using Lab3.Models;
 using Lab3.Services;
@@ -8,71 +8,55 @@ namespace Lab3.Views
 {
     public partial class MainWindow : Window
     {
-        private Lexer _lexer;
-
         public MainWindow()
         {
             InitializeComponent();
-            _lexer = new Lexer();
+            InputTextBox.Text = "do until a < 10 a = a + 1 ; output a loop";
         }
 
         private void AnalyzeButton_Click(object sender, RoutedEventArgs e)
         {
-            ResultTextBox.Clear();
-
-            string code = SourceTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(code))
+            try
             {
-                ResultTextBox.Text = "Введите исходный код.";
-                return;
-            }
+                TokensListBox.Items.Clear();
+                ParseLogTextBox.Clear();
+                PostfixListBox.Items.Clear();
 
-            // 1) Лексический анализ
-            List<Token> tokens = _lexer.Analyze(code);
-
-            ResultTextBox.Text = "=== Лексемы ===\n";
-            foreach (var t in tokens)
-            {
-                ResultTextBox.Text += t.ToString() + "\n";
-            }
-
-            // 2) Синтаксический анализ => ПОЛИЗ
-            var parser = new Parser(tokens);
-            bool ok = parser.ParseProgram();
-            if (!ok)
-            {
-                ResultTextBox.Text += "\nСинтаксический анализ завершился с ошибками.\n(См. вывод в консоли).";
-                return;
-            }
-
-            // Получаем ПОЛИЗ
-            var postfix = parser.GetPostfix();
-
-            // Выводим ПОЛИЗ
-            ResultTextBox.Text += "\n=== ПОЛИЗ ===\n";
-            for (int i = 0; i < postfix.Count; i++)
-            {
-                var pe = postfix[i];
-                ResultTextBox.Text += $"{i}: ";
-                switch (pe.type)
+                string input = InputTextBox.Text;
+                LexAnalyzer lex = new LexAnalyzer();
+                bool lexOk = lex.Analyze(input);
+                PostfixEntry.ConstTable = lex.Constants;
+                PostfixEntry.IdentifierTable = lex.Identifiers;
+                if (!lexOk)
                 {
-                    case EEntryType.etCmd:
-                        {
-                            ECmd cmd = (ECmd)pe.index;
-                            ResultTextBox.Text += cmd.ToString();
-                        }
-                        break;
-                    case EEntryType.etVar:
-                        ResultTextBox.Text += $"etVar({pe.index})";
-                        break;
-                    case EEntryType.etConst:
-                        ResultTextBox.Text += $"etConst({pe.index})";
-                        break;
-                    case EEntryType.etCmdPtr:
-                        ResultTextBox.Text += $"etCmdPtr({pe.index})";
-                        break;
+                    MessageBox.Show("Лексический анализ завершился с ошибками.");
+                    return;
                 }
-                ResultTextBox.Text += "\n";
+                foreach (var token in lex.Tokens)
+                {
+                    TokensListBox.Items.Add(token.ToString());
+                }
+
+                bool parseOk = Parser.Parse(lex.Tokens, lex.Identifiers, lex.Constants);
+                ParseLogTextBox.Text = Parser.GetParseLog();
+
+                if (!parseOk)
+                {
+                    MessageBox.Show("Синтаксический анализ завершился с ошибками.");
+                    return;
+                }
+
+                int i = 0;
+                foreach (var entry in Parser.Postfix)
+                {
+                    PostfixListBox.Items.Add($"{i++}: {entry}");
+                }
+
+                MessageBox.Show("Анализ завершён успешно.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка: " + ex.Message);
             }
         }
     }
