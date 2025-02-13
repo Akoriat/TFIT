@@ -214,105 +214,135 @@ namespace Lab0.Classes
         public DnaAutomath ToNka()
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("\nВыполняется преобразование НКА с эпсилон-переходами к 'обычному' НКА:\n");
+            Console.WriteLine("\nВыполняется преобразование НКА с ε-переходами к 'обычному' НКА:\n");
             Console.ResetColor();
 
             List<string> newInputs = Inputs.ToList();
             newInputs.RemoveAt(Inputs.Length - 1);
-            List<string> newStates = new List<string>();
-            List<string> newFinalStates = new List<string>();
-            Dictionary<string, List<string>> newTransitions = new Dictionary<string, List<string>>();
+
             Dictionary<string, List<string>> closures = GetAllClosures();
 
-            int amountOfInputs = Inputs.Length - 1;
-            for (int i = 0; i < States.Length; i++)
+            List<string> newStates = new List<string>(States);
+            Dictionary<string, List<string>> newTransitions = new Dictionary<string, List<string>>();
+            List<string> newFinalStates = new List<string>();
+
+            int amountOfInputs = newInputs.Count;
+
+            foreach (string state in States)
             {
-                string state = States[i];
-                string[] tempForEachInput = new string[amountOfInputs];
-                if (Transitions[state][Inputs.Length - 1] == "~")
+                List<string> transitionsForState = new List<string>();
+
+                for (int j = 0; j < amountOfInputs; j++)
                 {
-                    newStates.Add(state);
-                    Transitions[state].RemoveAt(amountOfInputs);
-                    newTransitions.Add(state, Transitions[state]);
-                    if (FinalStates.Contains(state))
+                    HashSet<string> targetStates = new HashSet<string>();
+
+                    List<string> epsClosureOfState = closures.ContainsKey(state)
+                                                        ? closures[state]
+                                                        : new List<string>() { state };
+                    if (!epsClosureOfState.Contains(state))
+                        epsClosureOfState.Add(state);
+
+                    foreach (string p in epsClosureOfState)
                     {
-                        newFinalStates.Add(state);
-                    }
-                }
-                else
-                {
-                    newStates.Add(state);
-                    List<string> tempTransitions = new List<string>();
-                    foreach (string item in closures[state])
-                    {
-                        for (int j = 0; j < amountOfInputs; j++)
+                        string trans = Transitions[p][j];
+                        if (trans != "~")
                         {
-                            if (Transitions[item][j] != "~")
+                            string cleaned = trans.Trim();
+                            List<string> nextStates;
+                            if (cleaned.StartsWith("{") && cleaned.EndsWith("}"))
                             {
-                                tempForEachInput[j] += Transitions[item][j] + ",";
-                            }
-                        }
-                        if (FinalStates.Contains(item))
-                        {
-                            newFinalStates.Add(state);
-                        }
-                    }
-                    foreach (string item in tempForEachInput)
-                    {
-                        if (string.IsNullOrEmpty(item))
-                        {
-                            tempTransitions.Add("~");
-                        }
-                        else
-                        {
-                            string[] tempStates = item.TrimEnd(',').Split(',');
-                            if (tempStates.Length == 1)
-                            {
-                                tempTransitions.Add(tempStates[0]);
+                                cleaned = cleaned.Trim('{', '}');
+                                nextStates = cleaned.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                                    .Select(s => s.Trim()).ToList();
                             }
                             else
                             {
-                                string result = "{" + string.Join(",", tempStates) + "}";
-                                tempTransitions.Add(result);
+                                nextStates = new List<string>() { cleaned };
+                            }
+                            foreach (var r in nextStates)
+                            {
+                                if (closures.ContainsKey(r))
+                                {
+                                    foreach (var s in closures[r])
+                                        targetStates.Add(s);
+                                    targetStates.Add(r);
+                                }
+                                else
+                                {
+                                    targetStates.Add(r);
+                                }
                             }
                         }
                     }
-                    newTransitions.Add(state, tempTransitions);
+                    targetStates.Remove("~");
+                    string transitionStr;
+                    if (targetStates.Count == 0)
+                        transitionStr = "~";
+                    else if (targetStates.Count == 1)
+                        transitionStr = targetStates.First();
+                    else
+                        transitionStr = "{" + string.Join(",", targetStates.OrderBy(x => x)) + "}";
+                    transitionsForState.Add(transitionStr);
+                }
+                newTransitions[state] = transitionsForState;
+
+                List<string> epsClosure = closures.ContainsKey(state) ? closures[state] : new List<string>();
+                if (FinalStates.Intersect(epsClosure).Any() || FinalStates.Contains(state))
+                {
+                    if (!newFinalStates.Contains(state))
+                        newFinalStates.Add(state);
                 }
             }
+
             return new DnaAutomath(newStates.ToArray(), newInputs.ToArray(), newFinalStates.ToArray(), InitState, newTransitions);
         }
 
+
         public Dictionary<string, List<string>> GetAllClosures()
         {
-            if (Type == TypeAutomaton.ENKA)
+            if (Type != TypeAutomaton.ENKA)
+                return null;
+
+            Dictionary<string, List<string>> result = new Dictionary<string, List<string>>();
+            foreach (string state in Transitions.Keys)
             {
-                Dictionary<string, List<string>> result = new Dictionary<string, List<string>>();
-                foreach (string state in Transitions.Keys)
+                HashSet<string> closure = new HashSet<string>();
+                Queue<string> queue = new Queue<string>();
+
+                closure.Add(state);
+                queue.Enqueue(state);
+
+                while (queue.Count > 0)
                 {
-                    List<string> epsClosure = new List<string>();
-                    List<string> statesInProcess = new List<string>() { state };
-                    int i = 0;
-                    while (i < statesInProcess.Count)
+                    string current = queue.Dequeue();
+                    string epsilonTrans = Transitions[current][Inputs.Length - 1];
+                    if (epsilonTrans != "~")
                     {
-                        string current = statesInProcess[i];
-                        if (Transitions[current][Inputs.Length - 1] != "~")
+                        List<string> epsTargets;
+                        string cleaned = epsilonTrans.Trim();
+                        if (cleaned.StartsWith("{") && cleaned.EndsWith("}"))
                         {
-                            if (!epsClosure.Contains(current))
-                                epsClosure.Add(current);
-                            string toAdd = Transitions[current][Inputs.Length - 1];
-                            if (!epsClosure.Contains(toAdd))
-                                epsClosure.Add(toAdd);
-                            if (!statesInProcess.Contains(toAdd))
-                                statesInProcess.Add(toAdd);
+                            cleaned = cleaned.Trim('{', '}');
+                            epsTargets = cleaned.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                                .Select(s => s.Trim()).ToList();
                         }
-                        i++;
+                        else
+                        {
+                            epsTargets = new List<string>() { cleaned };
+                        }
+                        foreach (var target in epsTargets)
+                        {
+                            if (!closure.Contains(target))
+                            {
+                                closure.Add(target);
+                                queue.Enqueue(target);
+                            }
+                        }
                     }
-                    result.Add(state, epsClosure.Distinct().ToList());
                 }
-                return result;
+                result[state] = closure.ToList();
             }
-            return null;
+            return result;
         }
     }
 }

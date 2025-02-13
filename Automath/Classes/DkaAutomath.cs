@@ -15,7 +15,6 @@ namespace Lab0.Classes
         {
             if (!IsInitiatedCorrectly)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Операция 'ProcessInputLine' не может быть выполнена: автомат не проинициализирован.");
                 Console.ResetColor();
                 return false;
@@ -35,7 +34,6 @@ namespace Lab0.Classes
                     currentState = Transitions[currentState][inputsList.IndexOf(symbol.ToString())];
                     if (currentState == "~")
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Запрашиваемое входным символом состояние не определено.\nИз состояния {prevState} нет перехода по символу {symbol}");
                         Console.ResetColor();
                         emergencyBreak = true;
@@ -45,7 +43,6 @@ namespace Lab0.Classes
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Ошибка! Считанный символ '{symbol}' не входит в алфавит!");
                     Console.ResetColor();
                     emergencyBreak = true;
@@ -58,14 +55,12 @@ namespace Lab0.Classes
                 Console.WriteLine($"\nВходное слово успешно прочитано. Автомат пришёл в состояние {currentState}");
                 if (FinalStates.Contains(currentState))
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"Состояние {currentState} входит в число финальных состояний.");
                     Console.ResetColor();
                     return true;
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Состояние {currentState} не входит в число финальных состояний.");
                     Console.ResetColor();
                 }

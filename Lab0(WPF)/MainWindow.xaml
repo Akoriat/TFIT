@@ -3,27 +3,43 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Автомат" Height="700" Width="1003">
     <Grid Margin="10">
+        <!-- 1) 7 строк Grid. 
+             0..3: настройки и кнопка "Загрузить автомат"
+             4:    первый TextBox (txtOutput)
+             5:    второй TextBox (txtDetailedOutput)
+             6:    панель с кнопками "Обработать" и т.д. -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- row 0 -->
             <RowDefinition Height="Auto"/>
+            <!-- row 1 -->
             <RowDefinition Height="Auto"/>
+            <!-- row 2 -->
             <RowDefinition Height="Auto"/>
+            <!-- row 3 -->
             <RowDefinition Height="*"/>
+            <!-- row 4 -->
+            <RowDefinition Height="*"/>
+            <!-- row 5 -->
             <RowDefinition Height="Auto"/>
+            <!-- row 6 -->
         </Grid.RowDefinitions>
 
+        <!-- ***** (row 0) Источник данных ***** -->
         <StackPanel Orientation="Horizontal" Grid.Row="0">
             <TextBlock Text="Источник данных:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <RadioButton x:Name="rbFile" Content="Из файла" IsChecked="True" Checked="rbFile_Checked" Margin="0,0,10,0"/>
             <RadioButton x:Name="rbManual" Content="Ввести вручную" Checked="rbManual_Checked"/>
         </StackPanel>
 
+        <!-- ***** (row 1) Ввод из файла (путь к файлу) ***** -->
         <StackPanel x:Name="spFileInput" Orientation="Horizontal" Grid.Row="1" Margin="0,5">
             <TextBlock Text="Путь к файлу:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <TextBox x:Name="txtFilePath" Width="300"/>
             <Button x:Name="btnDefaultFile" Content="Использовать файл по умолчанию" Margin="5,0,0,0" Click="btnDefaultFile_Click"/>
         </StackPanel>
 
+        <!-- ***** (row 2) Ручной ввод описания автомата (скрыт по умолчанию) ***** -->
         <StackPanel x:Name="spManualInput" Grid.Row="2" Margin="0,5" Visibility="Collapsed">
             <TextBlock Text="Введите описание автомата:" FontWeight="Bold" Margin="0,0,0,5"/>
 
@@ -62,17 +78,32 @@
             </StackPanel>
         </StackPanel>
 
+        <!-- ***** (row 3) Кнопка "Загрузить автомат" ***** -->
         <Button x:Name="btnLoad" Content="Загрузить автомат" Grid.Row="3" Width="150" Height="30" Margin="0,10,0,10" Click="btnLoad_Click"/>
 
-        <TextBox x:Name="txtOutput" Grid.Row="4" Height="200" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" IsReadOnly="True" TextWrapping="Wrap"/>
+        <!-- ***** (row 4) Первый TextBox (после загрузки автомата) ***** -->
+        <TextBox x:Name="txtOutput"
+                 Grid.Row="4"
+                 FontFamily="Consolas"
+                 FontSize="14"
+                 VerticalScrollBarVisibility="Auto"
+                 AcceptsReturn="True"
+                 IsReadOnly="True"
+                 TextWrapping="Wrap"/>
 
-        <!--<StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,10,0,0">
-            <TextBlock Text="Входное слово:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-            <TextBox x:Name="txtInputWord" Width="200" Margin="0,0,5,0"/>
-            <Button x:Name="btnProcess" Content="Обработать" Width="100" Click="btnProcess_Click"/>
-        </StackPanel>-->
-        
-        <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,10,0,0">
+        <!-- ***** (row 5) Второй TextBox (после обработки слова) ***** -->
+        <TextBox x:Name="txtDetailedOutput"
+                 Grid.Row="5"
+                 FontFamily="Consolas"
+                 FontSize="14"
+                 VerticalScrollBarVisibility="Auto"
+                 AcceptsReturn="True"
+                 IsReadOnly="True"
+                 TextWrapping="Wrap"
+                 Margin="0,5,0,0"/>
+
+        <!-- ***** (row 6) Панель с кнопками ***** -->
+        <StackPanel Orientation="Horizontal" Grid.Row="6" Margin="0,10,0,0">
             <TextBlock Text="Входное слово:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <TextBox x:Name="txtInputWord" Width="200" Margin="0,0,5,0"/>
             <Button x:Name="btnProcess" Content="Обработать" Width="100" Click="btnProcess_Click"/>

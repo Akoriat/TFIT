@@ -15,7 +15,6 @@ namespace Lab0.Classes
         {
             if (!IsInitiatedCorrectly)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Операция 'ProcessInputLine' не может быть выполнена: автомат не проинициализирован.");
                 Console.ResetColor();
                 return false;
@@ -48,7 +47,6 @@ namespace Lab0.Classes
                         {
                             if (tempState == "~" && currentStates.Count == 1)
                             {
-                                Console.ForegroundColor = ConsoleColor.Red;
                                 Console.WriteLine($"Запрашиваемое входным символом состояние не определено.\nИз состояния {currentStates[0]} нет перехода по символу {symbol}");
                                 Console.ResetColor();
                                 emergencyBreak = true;
@@ -61,7 +59,6 @@ namespace Lab0.Classes
 
                     if (reachableStates.Count == 0)
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Запрашиваемое входным символом состояние не определено.\nИз состояний нет перехода по символу {symbol}");
                         Console.ResetColor();
                         emergencyBreak = true;
@@ -79,7 +76,6 @@ namespace Lab0.Classes
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Ошибка! Считанный символ '{symbol}' не входит в алфавит!");
                     Console.ResetColor();
                     emergencyBreak = true;
@@ -90,7 +86,6 @@ namespace Lab0.Classes
             {
                 if (currentStates.Any(state => FinalStates.Contains(state)))
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.Write("Одно из состояний ");
                     foreach (string item in currentStates)
                     {
@@ -102,7 +97,6 @@ namespace Lab0.Classes
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.Write("Ни одно из состояний ");
                     foreach (string item in currentStates)
                     {
@@ -117,7 +111,6 @@ namespace Lab0.Classes
 
         public DkaAutomath ToDka()
         {
-            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("\nВыполняется преобразование НКА к ДКА:\n");
             Console.ResetColor();
 
@@ -196,119 +189,5 @@ namespace Lab0.Classes
             newStates.Remove("~");
             return new DkaAutomath(newStates.ToArray(), Inputs, newFinalStates.Distinct().ToArray(), initialState, newTransitions);
         }
-
-        //public DkaAutomath ToDka()
-        //{
-        //    Console.ForegroundColor = ConsoleColor.Yellow;
-        //    Console.WriteLine("\nВыполняется преобразование НКА к ДКА:\n");
-        //    Console.ResetColor();
-
-        //    List<string> newStates = new List<string>() { InitState };
-        //    List<string> newFinalStates = new List<string>();
-        //    Dictionary<string, List<string>> newTransitions = new Dictionary<string, List<string>>();
-        //    bool run = true;
-        //    int i = 0;
-
-        //    while (run)
-        //    {
-        //        string currentState = newStates[i];
-        //        List<string> results = new List<string>();
-
-        //        // Обработка состояний, которые являются множествами (например, {2,3})
-        //        if (currentState.Contains("{"))
-        //        {
-        //            string tempStates = currentState.Trim('{', '}');
-        //            List<HashSet<string>> reachableFromInputs = new List<HashSet<string>>();
-        //            for (int j = 0; j < Inputs.Length; j++)
-        //            {
-        //                reachableFromInputs.Add(new HashSet<string>());
-        //            }
-
-        //            // Обрабатываем каждое состояние в множестве
-        //            foreach (string state in tempStates.Split(','))
-        //            {
-        //                for (int j = 0; j < Inputs.Length; j++)
-        //                {
-        //                    string[] splitted = Transitions[state][j].Trim('{', '}').Split(',');
-        //                    foreach (string symbol in splitted)
-        //                    {
-        //                        if (symbol != "~") // Игнорируем пустые переходы
-        //                        {
-        //                            reachableFromInputs[j].Add(symbol);
-        //                        }
-        //                    }
-        //                }
-        //            }
-
-        //            // Формируем новые состояния для каждого символа алфавита
-        //            for (int j = 0; j < Inputs.Length; j++)
-        //            {
-        //                string[] statesArray = reachableFromInputs[j].ToArray();
-        //                Array.Sort(statesArray);
-        //                if (statesArray.Length > 0)
-        //                {
-        //                    string result = "{" + string.Join(",", statesArray) + "}";
-        //                    results.Add(result);
-
-        //                    // Добавляем новое состояние, если его еще нет
-        //                    if (!newStates.Contains(result))
-        //                    {
-        //                        newStates.Add(result);
-
-        //                        // Проверяем, является ли новое состояние финальным
-        //                        bool isFinal = statesArray.Any(s => FinalStates.Contains(s));
-        //                        if (isFinal && !newFinalStates.Contains(result))
-        //                        {
-        //                            newFinalStates.Add(result);
-        //                        }
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    results.Add("~"); // Пустой переход
-        //                }
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // Обработка одиночных состояний
-        //            for (int j = 0; j < Inputs.Length; j++)
-        //            {
-        //                string transition = Transitions[currentState][j];
-        //                if (transition.StartsWith("{") && transition.EndsWith("}"))
-        //                {
-        //                    transition = transition.Trim('{', '}');
-        //                }
-        //                results.Add(transition);
-
-        //                // Добавляем новое состояние, если его еще нет
-        //                if (!newStates.Contains(transition) && transition != "~")
-        //                {
-        //                    newStates.Add(transition);
-
-        //                    // Проверяем, является ли новое состояние финальным
-        //                    if (FinalStates.Contains(transition) && !newFinalStates.Contains(transition))
-        //                    {
-        //                        newFinalStates.Add(transition);
-        //                    }
-        //                }
-        //            }
-        //        }
-
-        //        // Добавляем переходы для текущего состояния
-        //        newTransitions[currentState] = results;
-
-        //        i++;
-        //        if (i >= newStates.Count)
-        //        {
-        //            run = false;
-        //        }
-        //    }
-
-        //    // Удаляем пустые переходы
-        //    newStates.Remove("~");
-
-        //    return new DkaAutomath(newStates.ToArray(), Inputs, newFinalStates.Distinct().ToArray(), InitState, newTransitions);
-        //}
     }
 }

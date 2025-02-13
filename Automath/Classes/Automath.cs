@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Lab0.Classes
 {
@@ -41,7 +42,6 @@ namespace Lab0.Classes
                 else
                 {
                     type = TypeAutomaton.None;
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Введён некорректный тип автомата: '{parameter}'");
                     Console.ResetColor();
                     return null;
@@ -93,14 +93,12 @@ namespace Lab0.Classes
                             line = file.ReadLine();
                             if (line == null)
                             {
-                                Console.ForegroundColor = ConsoleColor.Red;
                                 Console.WriteLine("Ошибка! Недостаточно строк в таблице переходов.");
                                 Console.ResetColor();
                                 emergencyStop = true;
                                 break;
                             }
 
-                            // Обработка множественных состояний (например, {2,3})
                             string[] tempStates = line.Split(' ');
                             List<string> transitionList = new List<string>();
 
@@ -108,19 +106,15 @@ namespace Lab0.Classes
                             {
                                 if (state.StartsWith("{") && state.EndsWith("}"))
                                 {
-                                    // Убираем фигурные скобки и добавляем как одно состояние
                                     transitionList.Add(state.Trim('{', '}'));
                                 }
                                 else
                                 {
-                                    // Одиночное состояние
                                     transitionList.Add(state);
                                 }
 
-                                // Проверка, что состояние существует
                                 if (!state.StartsWith("{") && !states.Contains(state) && state != "~")
                                 {
-                                    Console.ForegroundColor = ConsoleColor.Red;
                                     Console.WriteLine($"Ошибка! Состояние '{state}', указанное в таблице переходов, не определено!");
                                     Console.ResetColor();
                                     emergencyStop = true;
@@ -139,7 +133,6 @@ namespace Lab0.Classes
 
                 if (emergencyStop || !(gotStates && gotInputs && gotInitState && gotFinalStates && gotTransitions))
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Автомат не может быть инициализирован из-за критической ошибки!");
                     Console.ResetColor();
                     return null;
@@ -165,7 +158,6 @@ namespace Lab0.Classes
         {
             if (IsInitiatedCorrectly)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
                 if (Type == TypeAutomaton.DKA)
                     Console.WriteLine("Детерминированный КА");
                 else if (Type == TypeAutomaton.NKA)
@@ -175,7 +167,6 @@ namespace Lab0.Classes
                 Console.ResetColor();
 
                 Console.Write("Состояния: ");
-                Console.ForegroundColor = ConsoleColor.Yellow;
                 foreach (string word in States)
                 {
                     Console.Write(word + " ");
@@ -184,7 +175,6 @@ namespace Lab0.Classes
                 Console.WriteLine();
 
                 Console.Write("Алфавит: ");
-                Console.ForegroundColor = ConsoleColor.Yellow;
                 foreach (string word in Inputs)
                 {
                     Console.Write(word + " ");
@@ -193,12 +183,10 @@ namespace Lab0.Classes
                 Console.WriteLine();
 
                 Console.Write("Начальное состояние: ");
-                Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine(InitState);
                 Console.ResetColor();
 
                 Console.Write("Финальное(ые) состояние(я): ");
-                Console.ForegroundColor = ConsoleColor.Yellow;
                 foreach (string word in FinalStates)
                 {
                     Console.Write(word + " ");
@@ -208,75 +196,100 @@ namespace Lab0.Classes
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Операция 'Show' не может быть выполнена: автомат не проинициализирован.");
                 Console.ResetColor();
             }
         }
 
+        private string CenterText(string text, int width)
+        {
+            if (text.Length >= width)
+                return text;
+            int totalPadding = width - text.Length;
+            int padLeft = totalPadding / 2;
+            int padRight = totalPadding - padLeft;
+            return new string(' ', padLeft) + text + new string(' ', padRight);
+        }
+
+        private string AlignState(string displayState, int width)
+        {
+            string prefix = "";
+            string numberPart = displayState;
+            if (displayState.StartsWith("->*"))
+            {
+                prefix = "->*";
+                numberPart = displayState.Substring(3);
+            }
+            else if (displayState.StartsWith("->"))
+            {
+                prefix = "->";
+                numberPart = displayState.Substring(2);
+            }
+            else if (displayState.StartsWith("*"))
+            {
+                prefix = "*";
+                numberPart = displayState.Substring(1);
+            }
+            int remainingWidth = width - prefix.Length;
+            string alignedNumber = numberPart.PadLeft(remainingWidth);
+            return prefix + alignedNumber;
+        }
+
         public void ShowTable()
         {
-            if (IsInitiatedCorrectly)
-            {
-                int maxLength = MaxLengthForTable();
-
-                Console.WriteLine("Таблица переходов автомата:");
-
-                // Вывод заголовка таблицы
-                for (int j = 0; j < Inputs.Length + 1; j++)
-                {
-                    if (j == 0)
-                        Console.Write("{0,-" + (maxLength + 2) + "}\t", "");
-                    else
-                        Console.Write("|{0,-" + (maxLength + 1) + "}", Inputs[j - 1]);
-                }
-                Console.WriteLine();
-
-                // Вывод строк таблицы
-                for (int i = 0; i < States.Length; i++)
-                {
-                    for (int j = 0; j < Inputs.Length + 1; j++)
-                    {
-                        if (j == 0)
-                        {
-                            // Вывод состояния с маркерами начального и финального состояний
-                            if (States[i] == InitState && FinalStates.Contains(States[i]))
-                                Console.Write("->*{0,-" + (maxLength)     + "}: \t", States[i]);
-                            else if (States[i] == InitState)
-                                Console.Write("->{0,-" + (maxLength + 1) + "}: \t", States[i]);
-                            else if (FinalStates.Contains(States[i]))
-                                Console.Write("*{0,-" + (maxLength + 1) + "}: \t", States[i]);
-                            else
-                                Console.Write("{0,-" + (maxLength + 1) + "}: \t", States[i]);
-                        }
-                        else
-                        {
-                            // Вывод переходов
-                            string transition = Transitions[States[i]][j - 1];
-                            if (transition.StartsWith("{") && transition.EndsWith("}"))
-                            {
-                                // Убираем фигурные скобки для красивого вывода
-                                transition = transition.Trim('{', '}');
-                            }
-                            Console.Write("|{0,-" + (maxLength + 1) + "}", transition);
-                        }
-                    }
-                    Console.WriteLine();
-                }
-
-                // Вывод информации о ε-переходах (если это НКА с ε-переходами)
-                if (Type == TypeAutomaton.ENKA)
-                {
-                    Console.WriteLine("\nПримечание: Последний столбец таблицы соответствует ε-переходам.");
-                }
-            }
-            else
+            if (!IsInitiatedCorrectly)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Операция 'ShowTable' не может быть выполнена: автомат не проинициализирован.");
                 Console.ResetColor();
+                return;
             }
+
+            int cellWidth = Inputs.Concat(Transitions.Values.SelectMany(v => v)).Max(x => x.Length) + 2;
+            int stateColWidth = cellWidth;
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Таблица переходов автомата:");
+
+            sb.Append(new string(' ', stateColWidth) + "|");
+            foreach (var input in Inputs)
+            {
+                sb.Append(CenterText(input, cellWidth) + "|");
+            }
+            sb.AppendLine();
+
+            int tableWidth = stateColWidth + 1 + (Inputs.Length * (cellWidth + 1));
+            sb.AppendLine(new string('-', tableWidth));
+
+            foreach (var state in States)
+            {
+                string displayState = state;
+                if (state == InitState && FinalStates.Contains(state))
+                    displayState = "->*" + state;
+                else if (state == InitState)
+                    displayState = "->" + state;
+                else if (FinalStates.Contains(state))
+                    displayState = "*" + state;
+
+                sb.Append(AlignState(displayState, stateColWidth) + "|");
+                foreach (var transition in Transitions[state])
+                {
+                    string cell = transition;
+                    string trimmedCell = cell.Trim();
+                    if (trimmedCell.Contains(",") && !(trimmedCell.StartsWith("{") && trimmedCell.EndsWith("}")))
+                    {
+                        cell = "{" + trimmedCell + "}";
+                    }
+                    sb.Append(CenterText(cell, cellWidth) + "|");
+                }
+                sb.AppendLine();
+            }
+
+            sb.AppendLine(new string('-', tableWidth));
+
+            Console.WriteLine(sb.ToString());
         }
+
 
 
 

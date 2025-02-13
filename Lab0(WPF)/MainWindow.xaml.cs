@@ -153,15 +153,35 @@ namespace WpfAutomath
                 return;
             }
 
-            string inputWord = txtInputWord.Text.Trim();
-            Console.WriteLine();
-            bool result = _automath.ProcessInputLine(inputWord);
-            Console.WriteLine();
-            if (result)
-                Console.WriteLine("Слово принято автоматом.");
-            else
-                Console.WriteLine("Слово отклонено автоматом.");
+            // Очищаем второй TextBox перед обработкой
+            txtDetailedOutput.Clear();
+
+            // 1) Сохраняем "старый" поток вывода (который сейчас идёт в txtOutput)
+            TextWriter oldWriter = Console.Out;
+
+            try
+            {
+                // 2) Временно перенаправим Console в txtDetailedOutput
+                Console.SetOut(new TextBoxStreamWriter(txtDetailedOutput));
+
+                // 3) Теперь все Console.WriteLine() внутри ProcessInputLine (и т.п.)
+                //    будут попадать во второй TextBox:
+                string inputWord = txtInputWord.Text.Trim();
+                bool result = _automath.ProcessInputLine(inputWord);
+
+                // Здесь же можно дополнительно дописать итоги
+                if (result)
+                    Console.WriteLine("Слово принято автоматом.");
+                else
+                    Console.WriteLine("Слово отклонено автоматом.");
+            }
+            finally
+            {
+                // 4) Восстанавливаем старый поток (снова пишем в txtOutput)
+                Console.SetOut(oldWriter);
+            }
         }
+
 
         private Automath CreateAutomathFromFields()
         {

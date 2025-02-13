@@ -1,6 +1,5 @@
 ﻿namespace Lab2.Models
 {
-    // Перечисление типов токенов (лексем)
     public enum TokenType
     {
         Do,
