@@ -17,7 +17,6 @@ namespace Lab0.Classes
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Операция 'ProcessInputLine' не может быть выполнена: автомат не проинициализирован.");
-                Console.ResetColor();
                 return false;
             }
             bool emergencyBreak = false;
@@ -77,7 +76,6 @@ namespace Lab0.Classes
                         deadEnd = true;
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("Из текущего состояния отсутствуют переходы в другие состояния.");
-                        Console.ResetColor();
                         break;
                     }
 
@@ -128,7 +126,7 @@ namespace Lab0.Classes
                             Console.Write($"{s} -> ");
                         }
                         Console.WriteLine("...");
-                        Console.ResetColor();
+
                         break;
                     }
 
@@ -170,7 +168,6 @@ namespace Lab0.Classes
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Ошибка! Считанный символ '{symbol}' не входит в алфавит!");
-                    Console.ResetColor();
                     emergencyBreak = true;
                     break;
                 }
@@ -187,7 +184,6 @@ namespace Lab0.Classes
                         Console.Write($"'{item}', ");
                     }
                     Console.WriteLine("входит в число финальных состояний.");
-                    Console.ResetColor();
                     return true;
                 }
                 else
@@ -199,14 +195,12 @@ namespace Lab0.Classes
                         Console.Write($"'{item}', ");
                     }
                     Console.WriteLine("не входит в число финальных состояний.");
-                    Console.ResetColor();
                 }
             }
             else if (!emergencyBreak && deadEnd)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Чтение строки невозможно продолжить");
-                Console.ResetColor();
             }
             return false;
         }
@@ -215,7 +209,6 @@ namespace Lab0.Classes
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("\nВыполняется преобразование НКА с ε-переходами к 'обычному' НКА:\n");
-            Console.ResetColor();
 
             List<string> newInputs = Inputs.ToList();
             newInputs.RemoveAt(Inputs.Length - 1);

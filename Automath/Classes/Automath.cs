@@ -43,7 +43,6 @@ namespace Lab0.Classes
                 {
                     type = TypeAutomaton.None;
                     Console.WriteLine($"Введён некорректный тип автомата: '{parameter}'");
-                    Console.ResetColor();
                     return null;
                 }
 
@@ -206,14 +205,12 @@ namespace Lab0.Classes
                     Console.WriteLine("Недетерминированный КА");
                 else if (Type == TypeAutomaton.ENKA)
                     Console.WriteLine("Недетерминированный КА с е-переходами");
-                Console.ResetColor();
 
                 Console.Write("Состояния: ");
                 foreach (string word in States)
                 {
                     Console.Write(word + " ");
                 }
-                Console.ResetColor();
                 Console.WriteLine();
 
                 Console.Write("Алфавит: ");
@@ -221,25 +218,21 @@ namespace Lab0.Classes
                 {
                     Console.Write(word + " ");
                 }
-                Console.ResetColor();
                 Console.WriteLine();
 
                 Console.Write("Начальное состояние: ");
                 Console.WriteLine(InitState);
-                Console.ResetColor();
 
                 Console.Write("Финальное(ые) состояние(я): ");
                 foreach (string word in FinalStates)
                 {
                     Console.Write(word + " ");
                 }
-                Console.ResetColor();
                 Console.WriteLine();
             }
             else
             {
                 Console.WriteLine("Операция 'Show' не может быть выполнена: автомат не проинициализирован.");
-                Console.ResetColor();
             }
         }
 
@@ -283,7 +276,6 @@ namespace Lab0.Classes
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Операция 'ShowTable' не может быть выполнена: автомат не проинициализирован.");
-                Console.ResetColor();
                 return;
             }
 
