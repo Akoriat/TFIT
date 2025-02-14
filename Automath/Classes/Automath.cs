@@ -71,12 +71,6 @@ namespace Lab0.Classes
                             emergencyStop = true;
                             break;
                         }
-                        if (type == TypeAutomaton.ENKA && !states.Contains("ε"))
-                        {
-                            Console.WriteLine("Для ЕНКА должно быть задано состояние ε.");
-                            emergencyStop = true;
-                            break;
-                        }
                         gotStates = true;
                     }
                     else if (line.StartsWith("S:"))
@@ -86,6 +80,12 @@ namespace Lab0.Classes
                         if (inputs.Length == 0)
                         {
                             Console.WriteLine("Введите хотя бы один символ алфавита.");
+                            emergencyStop = true;
+                            break;
+                        }
+                        if (type == TypeAutomaton.ENKA && !inputs.Contains("ε"))
+                        {
+                            Console.WriteLine("Для ЕНКА должно быть задано состояние ε.");
                             emergencyStop = true;
                             break;
                         }
@@ -148,7 +148,7 @@ namespace Lab0.Classes
                                     }
                                     else
                                     {
-                                        transitionList.Add(state.Trim('{', '}'));
+                                        transitionList.Add(state);
                                     }
                                 }
                                 else
