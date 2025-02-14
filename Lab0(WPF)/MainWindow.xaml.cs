@@ -225,6 +225,11 @@ namespace WpfAutomath
                 MessageBox.Show("Введите начальное состояние.");
                 return null;
             }
+            if(initState.Split(", ").Length > 1 && type == TypeAutomaton.DKA)
+            {
+                MessageBox.Show("Для ДКА нельзя задать больше одного начального состояния");
+                return null;
+            }
 
             // Получение финальных состояний
             string[] finalStates = txtFinalStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
@@ -259,8 +264,15 @@ namespace WpfAutomath
                 {
                     if (part.StartsWith("{") && part.EndsWith("}"))
                     {
-                        // Убираем фигурные скобки и добавляем как одно значение
-                        transitionList.Add(part.Trim('{', '}'));
+                        if (type == TypeAutomaton.DKA)
+                        {
+                            MessageBox.Show("Для ДКА нельзя задавать множественные состояния.");
+                            return null;
+                        }
+                        else
+                        {
+                            transitionList.Add(part);
+                        }
                     }
                     else
                     {
