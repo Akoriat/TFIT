@@ -153,23 +153,18 @@ namespace WpfAutomath
                 return;
             }
 
-            // Очищаем второй TextBox перед обработкой
             txtDetailedOutput.Clear();
 
-            // 1) Сохраняем "старый" поток вывода (который сейчас идёт в txtOutput)
             TextWriter oldWriter = Console.Out;
 
             try
             {
-                // 2) Временно перенаправим Console в txtDetailedOutput
+
                 Console.SetOut(new TextBoxStreamWriter(txtDetailedOutput));
 
-                // 3) Теперь все Console.WriteLine() внутри ProcessInputLine (и т.п.)
-                //    будут попадать во второй TextBox:
                 string inputWord = txtInputWord.Text.Trim();
                 bool result = _automath.ProcessInputLine(inputWord);
 
-                // Здесь же можно дополнительно дописать итоги
                 if (result)
                     Console.WriteLine("Слово принято автоматом.");
                 else
@@ -177,7 +172,6 @@ namespace WpfAutomath
             }
             finally
             {
-                // 4) Восстанавливаем старый поток (снова пишем в txtOutput)
                 Console.SetOut(oldWriter);
             }
         }
@@ -185,7 +179,6 @@ namespace WpfAutomath
 
         private Automath CreateAutomathFromFields()
         {
-            // Определение типа автомата
             string typeStr = (cbType.SelectedItem as ComboBoxItem)?.Content as string;
             TypeAutomaton type;
             if (typeStr == "DKA")
@@ -200,7 +193,6 @@ namespace WpfAutomath
                 return null;
             }
 
-            // Получение состояний
             string[] states = txtStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                              .Select(s => s.Trim()).ToArray();
             if (states.Length == 0)
@@ -208,8 +200,12 @@ namespace WpfAutomath
                 MessageBox.Show("Введите хотя бы одно состояние.");
                 return null;
             }
+            if (type == TypeAutomaton.ENKA && !states.Contains("ε"))
+            {
+                MessageBox.Show("Для ЕНКА должно быть задано состояние ε.");
+                return null;
+            }
 
-            // Получение алфавита
             string[] inputs = txtAlphabet.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                               .Select(s => s.Trim()).ToArray();
             if (inputs.Length == 0)
@@ -218,7 +214,6 @@ namespace WpfAutomath
                 return null;
             }
 
-            // Получение начального состояния
             string initState = txtInitialState.Text.Trim();
             if (string.IsNullOrEmpty(initState))
             {
@@ -231,7 +226,6 @@ namespace WpfAutomath
                 return null;
             }
 
-            // Получение финальных состояний
             string[] finalStates = txtFinalStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                                       .Select(s => s.Trim()).ToArray();
             if (finalStates.Length == 0)
@@ -240,7 +234,6 @@ namespace WpfAutomath
                 return null;
             }
 
-            // Получение таблицы переходов
             var transitions = new Dictionary<string, List<string>>();
             string[] lines = txtTransitions.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             if (lines.Length != states.Length)
@@ -258,7 +251,6 @@ namespace WpfAutomath
                     return null;
                 }
 
-                // Обработка множественных состояний (например, {2,3})
                 List<string> transitionList = new List<string>();
                 foreach (string part in parts)
                 {
@@ -276,7 +268,6 @@ namespace WpfAutomath
                     }
                     else
                     {
-                        // Одиночное состояние
                         transitionList.Add(part);
                     }
                 }
@@ -284,7 +275,6 @@ namespace WpfAutomath
                 transitions.Add(states[i], transitionList);
             }
 
-            // Создание автомата в зависимости от типа
             switch (type)
             {
                 case TypeAutomaton.DKA:
