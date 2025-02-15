@@ -23,10 +23,10 @@ namespace Lab3.Services
 
         public bool Analyze(string input)
         {
-            int pos = 0;
+            var pos = 0;
             while (pos < input.Length)
             {
-                char c = input[pos];
+                var c = input[pos];
 
                 if (char.IsWhiteSpace(c))
                 {
@@ -36,21 +36,21 @@ namespace Lab3.Services
 
                 if (char.IsLetter(c))
                 {
-                    int start = pos;
+                    var start = pos;
                     while (pos < input.Length && char.IsLetterOrDigit(input[pos]))
                     {
                         pos++;
                     }
-                    string lexeme = input.Substring(start, pos - start);
-                    string lowerLexeme = lexeme.ToLower();
+                    var lexeme = input.Substring(start, pos - start);
+                    var lowerLexeme = lexeme.ToLower();
                     if (keywords.ContainsKey(lowerLexeme))
                     {
-                        Token token = new Token { Type = keywords[lowerLexeme], Lexeme = lexeme, StartPos = start, EndPos = pos - 1 };
+                        var token = new Token { Type = keywords[lowerLexeme], Lexeme = lexeme, StartPos = start, EndPos = pos - 1 };
                         Tokens.Add(token);
                     }
                     else
                     {
-                        Token token = new Token { Type = TokenType.Identifier, Lexeme = lexeme, StartPos = start, EndPos = pos - 1 };
+                        var token = new Token { Type = TokenType.Identifier, Lexeme = lexeme, StartPos = start, EndPos = pos - 1 };
                         Tokens.Add(token);
                         if (!Identifiers.Contains(lexeme))
                             Identifiers.Add(lexeme);
@@ -59,13 +59,13 @@ namespace Lab3.Services
                 }
                 else if (char.IsDigit(c))
                 {
-                    int start = pos;
+                    var start = pos;
                     while (pos < input.Length && char.IsDigit(input[pos]))
                     {
                         pos++;
                     }
-                    string lexeme = input.Substring(start, pos - start);
-                    Token token = new Token { Type = TokenType.Constant, Lexeme = lexeme, StartPos = start, EndPos = pos - 1 };
+                    var lexeme = input.Substring(start, pos - start);
+                    var token = new Token { Type = TokenType.Constant, Lexeme = lexeme, StartPos = start, EndPos = pos - 1 };
                     Tokens.Add(token);
                     if (!Constants.Contains(lexeme))
                         Constants.Add(lexeme);
@@ -77,14 +77,14 @@ namespace Lab3.Services
                     {
                         if (pos + 1 < input.Length && input[pos + 1] == '>')
                         {
-                            Token token = new Token { Type = TokenType.Rel, Lexeme = "<>", StartPos = pos, EndPos = pos + 1 };
+                            var token = new Token { Type = TokenType.Rel, Lexeme = "<>", StartPos = pos, EndPos = pos + 1 };
                             Tokens.Add(token);
                             pos += 2;
                             continue;
                         }
                         else
                         {
-                            Token token = new Token { Type = TokenType.Rel, Lexeme = "<", StartPos = pos, EndPos = pos };
+                            var token = new Token { Type = TokenType.Rel, Lexeme = "<", StartPos = pos, EndPos = pos };
                             Tokens.Add(token);
                             pos++;
                             continue;
@@ -92,7 +92,7 @@ namespace Lab3.Services
                     }
                     else if (c == '>')
                     {
-                        Token token = new Token { Type = TokenType.Rel, Lexeme = ">", StartPos = pos, EndPos = pos };
+                        var token = new Token { Type = TokenType.Rel, Lexeme = ">", StartPos = pos, EndPos = pos };
                         Tokens.Add(token);
                         pos++;
                         continue;
@@ -101,14 +101,14 @@ namespace Lab3.Services
                     {
                         if (pos + 1 < input.Length && input[pos + 1] == '=')
                         {
-                            Token token = new Token { Type = TokenType.Rel, Lexeme = "==", StartPos = pos, EndPos = pos + 1 };
+                            var token = new Token { Type = TokenType.Rel, Lexeme = "==", StartPos = pos, EndPos = pos + 1 };
                             Tokens.Add(token);
                             pos += 2;
                             continue;
                         }
                         else
                         {
-                            Token token = new Token { Type = TokenType.As, Lexeme = "=", StartPos = pos, EndPos = pos };
+                            var token = new Token { Type = TokenType.As, Lexeme = "=", StartPos = pos, EndPos = pos };
                             Tokens.Add(token);
                             pos++;
                             continue;
@@ -116,42 +116,42 @@ namespace Lab3.Services
                     }
                     else if (c == '+')
                     {
-                        Token token = new Token { Type = TokenType.Plus, Lexeme = "+", StartPos = pos, EndPos = pos };
+                        var token = new Token { Type = TokenType.Plus, Lexeme = "+", StartPos = pos, EndPos = pos };
                         Tokens.Add(token);
                         pos++;
                         continue;
                     }
                     else if (c == '-')
                     {
-                        Token token = new Token { Type = TokenType.Minus, Lexeme = "-", StartPos = pos, EndPos = pos };
+                        var token = new Token { Type = TokenType.Minus, Lexeme = "-", StartPos = pos, EndPos = pos };
                         Tokens.Add(token);
                         pos++;
                         continue;
                     }
                     else if (c == '*')
                     {
-                        Token token = new Token { Type = TokenType.Multiply, Lexeme = "*", StartPos = pos, EndPos = pos };
+                        var token = new Token { Type = TokenType.Multiply, Lexeme = "*", StartPos = pos, EndPos = pos };
                         Tokens.Add(token);
                         pos++;
                         continue;
                     }
                     else if (c == '/')
                     {
-                        Token token = new Token { Type = TokenType.Divide, Lexeme = "/", StartPos = pos, EndPos = pos };
+                        var token = new Token { Type = TokenType.Divide, Lexeme = "/", StartPos = pos, EndPos = pos };
                         Tokens.Add(token);
                         pos++;
                         continue;
                     }
                     else if (c == ';')
                     {
-                        Token token = new Token { Type = TokenType.Delimiter, Lexeme = ";", StartPos = pos, EndPos = pos };
+                        var token = new Token { Type = TokenType.Delimiter, Lexeme = ";", StartPos = pos, EndPos = pos };
                         Tokens.Add(token);
                         pos++;
                         continue;
                     }
                     else
                     {
-                        Token token = new Token { Type = TokenType.Unknown, Lexeme = c.ToString(), StartPos = pos, EndPos = pos };
+                        var token = new Token { Type = TokenType.Unknown, Lexeme = c.ToString(), StartPos = pos, EndPos = pos };
                         Tokens.Add(token);
                         pos++;
                         continue;

@@ -2,9 +2,10 @@
 {
     public class Token
     {
-        public TokenType Type { get; set; }
-        public string Lexeme { get; set; }
-        public int StartPos { get; set; }
-        public int EndPos { get; set; }
+        public TokenType Type;      
+        public string Lexeme = "";  
+        public int Position;        
+        public LexemeCategory Category; 
+        public Token? Next = null;      
     }
 }

@@ -19,18 +19,18 @@ namespace Lab0.Classes
                 Console.ResetColor();
                 return false;
             }
-            bool emergencyBreak = false;
-            string currentState = InitState;
+            var emergencyBreak = false;
+            var currentState = InitState;
             List<string> inputsList = Inputs.ToList();
 
             Console.WriteLine($"\nТекущее состояние: {currentState}");
 
-            foreach (char symbol in word)
+            foreach (var symbol in word)
             {
                 if (Inputs.Contains(symbol.ToString()))
                 {
                     Console.WriteLine($"Считан символ '{symbol}'");
-                    string prevState = currentState;
+                    var prevState = currentState;
                     currentState = Transitions[currentState][inputsList.IndexOf(symbol.ToString())];
                     if (currentState == "~")
                     {

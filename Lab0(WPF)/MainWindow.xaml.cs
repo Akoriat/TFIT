@@ -124,7 +124,7 @@ namespace WpfAutomath
             txtOutput.Clear();
             if (rbFile.IsChecked == true)
             {
-                string filePath = txtFilePath.Text.Trim();
+                var filePath = txtFilePath.Text.Trim();
                 if (!File.Exists(filePath))
                 {
                     MessageBox.Show("Файл не найден!");
@@ -157,7 +157,7 @@ namespace WpfAutomath
             txtDetailedOutput.Clear();
 
             // 1) Сохраняем "старый" поток вывода (который сейчас идёт в txtOutput)
-            TextWriter oldWriter = Console.Out;
+            var oldWriter = Console.Out;
 
             try
             {
@@ -166,8 +166,8 @@ namespace WpfAutomath
 
                 // 3) Теперь все Console.WriteLine() внутри ProcessInputLine (и т.п.)
                 //    будут попадать во второй TextBox:
-                string inputWord = txtInputWord.Text.Trim();
-                bool result = _automath.ProcessInputLine(inputWord);
+                var inputWord = txtInputWord.Text.Trim();
+                var result = _automath.ProcessInputLine(inputWord);
 
                 // Здесь же можно дополнительно дописать итоги
                 if (result)
@@ -186,7 +186,7 @@ namespace WpfAutomath
         private Automath CreateAutomathFromFields()
         {
             // Определение типа автомата
-            string typeStr = (cbType.SelectedItem as ComboBoxItem)?.Content as string;
+            var typeStr = (cbType.SelectedItem as ComboBoxItem)?.Content as string;
             TypeAutomaton type;
             if (typeStr == "DKA")
                 type = TypeAutomaton.DKA;
@@ -219,7 +219,7 @@ namespace WpfAutomath
             }
 
             // Получение начального состояния
-            string initState = txtInitialState.Text.Trim();
+            var initState = txtInitialState.Text.Trim();
             if (string.IsNullOrEmpty(initState))
             {
                 MessageBox.Show("Введите начальное состояние.");
@@ -244,7 +244,7 @@ namespace WpfAutomath
                 return null;
             }
 
-            for (int i = 0; i < states.Length; i++)
+            for (var i = 0; i < states.Length; i++)
             {
                 string[] parts = lines[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length != inputs.Length)
@@ -255,7 +255,7 @@ namespace WpfAutomath
 
                 // Обработка множественных состояний (например, {2,3})
                 List<string> transitionList = new List<string>();
-                foreach (string part in parts)
+                foreach (var part in parts)
                 {
                     if (part.StartsWith("{") && part.EndsWith("}"))
                     {

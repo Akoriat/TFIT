@@ -20,31 +20,31 @@ namespace Lab0.Classes
                 Console.ResetColor();
                 return false;
             }
-            bool emergencyBreak = false;
-            bool deadEnd = false;
-            bool epsCycle = false;
+            var emergencyBreak = false;
+            var deadEnd = false;
+            var epsCycle = false;
             List<string> inputsList = Inputs.ToList();
             List<string> reachableStates = new List<string>();
             List<string> epsClosure = new List<string>();
             List<string> currentStates = new List<string>() { InitState };
-            int tick = 0;
+            var tick = 0;
             Dictionary<string, List<string>> allClosures = GetAllClosures();
 
             Console.WriteLine($"\nТекущее состояние: {InitState}");
 
-            foreach (char symbol in word)
+            foreach (var symbol in word)
             {
                 tick++;
                 if (Inputs.Contains(symbol.ToString()))
                 {
                     Console.WriteLine($"\nТакт №{tick}. Считан символ '{symbol}'");
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
-                        string tempState = Transitions[item][inputsList.IndexOf(symbol.ToString())];
+                        var tempState = Transitions[item][inputsList.IndexOf(symbol.ToString())];
                         if (tempState.Contains("{"))
                         {
                             tempState = tempState.Trim('{', '}');
-                            foreach (string state in tempState.Split(','))
+                            foreach (var state in tempState.Split(','))
                             {
                                 if (!reachableStates.Contains(state))
                                     reachableStates.Add(state);
@@ -64,7 +64,7 @@ namespace Lab0.Classes
 
                     Console.Write(" - Текущее(ие) состояние(ия): ");
                     currentStates.Sort();
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
                         Console.Write($"'{item}', ");
                     }
@@ -81,11 +81,11 @@ namespace Lab0.Classes
                         break;
                     }
 
-                    int i = 0;
+                    var i = 0;
                     while (i < currentStates.Count)
                     {
-                        string toAdd = "";
-                        string item = currentStates[i];
+                        var toAdd = "";
+                        var item = currentStates[i];
                         if (Transitions[item][Inputs.Length - 1] != "~")
                         {
                             epsClosure.Add(item);
@@ -107,8 +107,8 @@ namespace Lab0.Classes
                             }
                             else
                             {
-                                string tempState = toAdd.Trim('{', '}');
-                                foreach (string state in tempState.Split(','))
+                                var tempState = toAdd.Trim('{', '}');
+                                foreach (var state in tempState.Split(','))
                                 {
                                     if (!currentStates.Contains(state))
                                         currentStates.Add(state);
@@ -132,8 +132,8 @@ namespace Lab0.Classes
                         break;
                     }
 
-                    bool epsAdded = false;
-                    foreach (string item in epsClosure)
+                    var epsAdded = false;
+                    foreach (var item in epsClosure)
                     {
                         if (!item.Contains('{'))
                         {
@@ -143,8 +143,8 @@ namespace Lab0.Classes
                         }
                         else
                         {
-                            string tempState = item.Trim('{', '}');
-                            foreach (string state in tempState.Split(','))
+                            var tempState = item.Trim('{', '}');
+                            foreach (var state in tempState.Split(','))
                             {
                                 if (!currentStates.Contains(state))
                                     currentStates.Add(state);
@@ -155,10 +155,10 @@ namespace Lab0.Classes
 
                     if (epsAdded)
                     {
-                        foreach (string item in prevCurrent)
+                        foreach (var item in prevCurrent)
                         {
                             Console.Write($"Состояние {item} образует следующее замыкание: ");
-                            foreach (string state in allClosures[item])
+                            foreach (var state in allClosures[item])
                             {
                                 Console.Write($"{state}, ");
                             }
@@ -182,7 +182,7 @@ namespace Lab0.Classes
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.Write("Одно из достигнутых состояний ");
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
                         Console.Write($"'{item}', ");
                     }
@@ -194,7 +194,7 @@ namespace Lab0.Classes
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.Write("Ни одно из состояний ");
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
                         Console.Write($"'{item}', ");
                     }
@@ -226,13 +226,13 @@ namespace Lab0.Classes
             Dictionary<string, List<string>> newTransitions = new Dictionary<string, List<string>>();
             List<string> newFinalStates = new List<string>();
 
-            int amountOfInputs = newInputs.Count;
+            var amountOfInputs = newInputs.Count;
 
-            foreach (string state in States)
+            foreach (var state in States)
             {
                 List<string> transitionsForState = new List<string>();
 
-                for (int j = 0; j < amountOfInputs; j++)
+                for (var j = 0; j < amountOfInputs; j++)
                 {
                     HashSet<string> targetStates = new HashSet<string>();
 
@@ -242,12 +242,12 @@ namespace Lab0.Classes
                     if (!epsClosureOfState.Contains(state))
                         epsClosureOfState.Add(state);
 
-                    foreach (string p in epsClosureOfState)
+                    foreach (var p in epsClosureOfState)
                     {
-                        string trans = Transitions[p][j];
+                        var trans = Transitions[p][j];
                         if (trans != "~")
                         {
-                            string cleaned = trans.Trim();
+                            var cleaned = trans.Trim();
                             List<string> nextStates;
                             if (cleaned.StartsWith("{") && cleaned.EndsWith("}"))
                             {
@@ -304,7 +304,7 @@ namespace Lab0.Classes
                 return null;
 
             Dictionary<string, List<string>> result = new Dictionary<string, List<string>>();
-            foreach (string state in Transitions.Keys)
+            foreach (var state in Transitions.Keys)
             {
                 HashSet<string> closure = new HashSet<string>();
                 Queue<string> queue = new Queue<string>();
@@ -314,12 +314,12 @@ namespace Lab0.Classes
 
                 while (queue.Count > 0)
                 {
-                    string current = queue.Dequeue();
-                    string epsilonTrans = Transitions[current][Inputs.Length - 1];
+                    var current = queue.Dequeue();
+                    var epsilonTrans = Transitions[current][Inputs.Length - 1];
                     if (epsilonTrans != "~")
                     {
                         List<string> epsTargets;
-                        string cleaned = epsilonTrans.Trim();
+                        var cleaned = epsilonTrans.Trim();
                         if (cleaned.StartsWith("{") && cleaned.EndsWith("}"))
                         {
                             cleaned = cleaned.Trim('{', '}');

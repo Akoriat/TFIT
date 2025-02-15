@@ -19,25 +19,25 @@ namespace Lab0.Classes
                 Console.ResetColor();
                 return false;
             }
-            bool emergencyBreak = false;
+            var emergencyBreak = false;
             List<string> inputsList = Inputs.ToList();
             List<string> reachableStates = new List<string>();
             List<string> currentStates = new List<string>() { InitState };
 
             Console.WriteLine($"\nТекущее состояние: {InitState}");
 
-            foreach (char symbol in word)
+            foreach (var symbol in word)
             {
                 if (Inputs.Contains(symbol.ToString()))
                 {
                     Console.WriteLine($"Считан символ '{symbol}'");
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
-                        string tempState = Transitions[item][inputsList.IndexOf(symbol.ToString())];
+                        var tempState = Transitions[item][inputsList.IndexOf(symbol.ToString())];
                         if (tempState.Contains("{"))
                         {
                             tempState = tempState.Trim('{', '}');
-                            foreach (string state in tempState.Split(','))
+                            foreach (var state in tempState.Split(','))
                             {
                                 if (!reachableStates.Contains(state) && state != "~")
                                     reachableStates.Add(state);
@@ -68,7 +68,7 @@ namespace Lab0.Classes
                     currentStates = new List<string>(reachableStates);
                     reachableStates.Clear();
                     Console.Write(" - Текущее(ие) состояние(ия): ");
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
                         Console.Write($"'{item}', ");
                     }
@@ -87,7 +87,7 @@ namespace Lab0.Classes
                 if (currentStates.Any(state => FinalStates.Contains(state)))
                 {
                     Console.Write("Одно из состояний ");
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
                         Console.Write($"'{item}', ");
                     }
@@ -98,7 +98,7 @@ namespace Lab0.Classes
                 else
                 {
                     Console.Write("Ни одно из состояний ");
-                    foreach (string item in currentStates)
+                    foreach (var item in currentStates)
                     {
                         Console.Write($"'{item}', ");
                     }
@@ -119,7 +119,7 @@ namespace Lab0.Classes
             Dictionary<string, List<string>> newTransitions = new Dictionary<string, List<string>>();
             Queue<string> queue = new Queue<string>();
 
-            string initialState = "{" + InitState + "}";
+            var initialState = "{" + InitState + "}";
             queue.Enqueue(initialState);
             newStates.Add(initialState);
 
@@ -130,25 +130,25 @@ namespace Lab0.Classes
 
             while (queue.Count > 0)
             {
-                string currentState = queue.Dequeue();
+                var currentState = queue.Dequeue();
                 List<string> results = new List<string>();
                 HashSet<string>[] reachableFromInputs = new HashSet<string>[Inputs.Length];
 
-                for (int j = 0; j < Inputs.Length; j++)
+                for (var j = 0; j < Inputs.Length; j++)
                 {
                     reachableFromInputs[j] = new HashSet<string>();
                 }
 
                 string[] componentStates = currentState.Trim('{', '}').Split(',');
 
-                foreach (string state in componentStates)
+                foreach (var state in componentStates)
                 {
-                    for (int j = 0; j < Inputs.Length; j++)
+                    for (var j = 0; j < Inputs.Length; j++)
                     {
                         if (Transitions.ContainsKey(state))
                         {
                             string[] nextStates = Transitions[state][j].Trim('{', '}').Split(',');
-                            foreach (string nextState in nextStates)
+                            foreach (var nextState in nextStates)
                             {
                                 if (nextState != "~")
                                 {
@@ -159,11 +159,11 @@ namespace Lab0.Classes
                     }
                 }
 
-                for (int j = 0; j < Inputs.Length; j++)
+                for (var j = 0; j < Inputs.Length; j++)
                 {
                     if (reachableFromInputs[j].Count > 0)
                     {
-                        string newState = "{" + string.Join(",", reachableFromInputs[j].OrderBy(s => s)) + "}";
+                        var newState = "{" + string.Join(",", reachableFromInputs[j].OrderBy(s => s)) + "}";
                         results.Add(newState);
 
                         if (!newStates.Contains(newState))

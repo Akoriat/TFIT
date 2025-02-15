@@ -1,249 +1,246 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Lab2.Models;
+﻿using Lab2.Models;
 
-namespace Lab2.Services
+namespace Lab2.Services;
+
+// <DoUntil>      → Do Until <LogicalExpr> <Operators> Loop
+// <Operators>    → <Statement> { Del <Statement> }
+// <Statement>    → Identifier As <ArithExpr>
+//                | Output <Operand>
+// <ArithExpr>    → <Term> { Ao <Term> }
+// <Term>         → <Factor> { (Mul | Div) <Factor> }
+// <Factor>       → Identifier | Constant
+// <LogicalExpr>  → <LogTerm> { Or <LogTerm> }
+// <LogTerm>      → <FactorLog> { And <FactorLog> }
+// <FactorLog>    → Not <FactorLog>
+//                | <RelExpr>
+// <RelExpr>      → <Operand> [ Rel <Operand> ]
+// <Operand>      → Identifier | Constant
+
+public class Parser
 {
-    public static class Parser
+    private Token? _p;
+    public List<string> ErrorMessages { get; } = [];
+
+    public Parser(Token? startToken)
     {
-        private static List<Token> tokens;
+        _p = startToken;
+    }
 
-        private static int currentIndex;
+    private void Error(string msg, int pos)
+    {
+        var error = $"Ошибка в позиции {pos}: {msg}";
+        ErrorMessages.Add(error);
+        Console.WriteLine(error);
+    }
 
-        private static StringBuilder parseLog = new StringBuilder();
-        private static int indentLevel = 0;
-
-        private static Token CurrentToken => currentIndex < tokens.Count ? tokens[currentIndex] : null;
-
-        private static void Log(string message)
+    // <DoUntil> → Do Until <LogicalExpr> <Operators> Loop
+    public bool DoUntil()
+    {
+        if (_p == null || _p.Type != TokenType.Do)
         {
-            parseLog.AppendLine(new string(' ', indentLevel * 2) + message);
+            Error("Ожидается 'Do'", _p?.Position ?? 0);
+            return false;
         }
+        _p = _p.Next;
 
-        public static string GetParseLog()
+        if (_p == null || _p.Type != TokenType.Until)
         {
-            return parseLog.ToString();
+            Error("Ожидается 'Until'", _p?.Position ?? 0);
+            return false;
         }
+        _p = _p.Next;
 
-        private static void Error(string msg, int pos)
+        if (!LogicalExpr())
+            return false;
+
+        if (!Operators())
+            return false;
+
+        if (_p == null || _p.Type != TokenType.Loop)
         {
-            throw new Exception($"Ошибка на позиции {pos}: {msg}");
+            Error("Ожидается 'Loop'", _p?.Position ?? 0);
+            return false;
         }
+        _p = _p.Next;
 
-        public static bool DoUntilStatement()
+        if (_p != null && _p.Type != TokenType.EndOfFile)
         {
-            Log("Вход в DoUntilStatement, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (CurrentToken == null || CurrentToken.Type != TokenType.Do)
-            {
-                Error("Ожидалось 'do'", CurrentToken != null ? CurrentToken.StartPos : -1);
-                return false;
-            }
-            currentIndex++;
-
-            if (CurrentToken == null || CurrentToken.Type != TokenType.Until)
-            {
-                Error("Ожидалось 'until'", CurrentToken != null ? CurrentToken.StartPos : -1);
-                return false;
-            }
-            currentIndex++;
-
-            if (!LogicalExpression())
-                return false;
-
-            if (!Operators())
-                return false;
-
-            if (CurrentToken == null || CurrentToken.Type != TokenType.Loop)
-            {
-                Error("Ожидалось 'loop'", CurrentToken != null ? CurrentToken.StartPos : -1);
-                return false;
-            }
-            currentIndex++;
-
-            indentLevel--;
-            Log("Выход из DoUntilStatement, результат: true, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            if (currentIndex < tokens.Count)
-            {
-                Error("Лишние токены после 'loop'", CurrentToken != null ? CurrentToken.StartPos : -1);
-                return false;
-            }
-            return true;
+            Error("Лишние символы", _p.Position);
+            return false;
         }
+        return true;
+    }
 
-        public static bool LogicalExpression()
+    // <Operators> → <Statement> { Del <Statement> } [ Del ]
+    public bool Operators()
+    {
+        // Обязательно должно быть как минимум одно Statement
+        if (!Statement())
+            return false;
+
+        // Обработка последовательности "Del <Statement>"
+        while (_p != null && _p.Type == TokenType.Del)
         {
-            Log("Вход в LogicalExpression, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
+            // Сначала потребляем разделитель Del
+            _p = _p.Next;
 
-            if (CurrentToken != null && CurrentToken.Type == TokenType.Not)
+            // Если следующий токен допускает начало оператора (Identifier или Output),
+            // то разбираем очередной Statement
+            if (_p != null && (_p.Type == TokenType.Identifier || _p.Type == TokenType.Output))
             {
-                Log("Найден 'not'");
-                currentIndex++;
-            }
-
-            if (!ComparisonExpression())
-                return false;
-
-            while (CurrentToken != null &&
-                   (CurrentToken.Type == TokenType.And || CurrentToken.Type == TokenType.Or))
-            {
-                Log("Найден логический оператор: " + CurrentToken.ToString());
-                currentIndex++;
-
-                if (CurrentToken != null && CurrentToken.Type == TokenType.Not)
-                {
-                    Log("Найден 'not' после логического оператора");
-                    currentIndex++;
-                }
-
-                if (!ComparisonExpression())
+                if (!Statement())
                     return false;
-            }
-            indentLevel--;
-            Log("Выход из LogicalExpression, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            return true;
-        }
-        public static bool ComparisonExpression()
-        {
-            Log("Вход в ComparisonExpression, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (!Operand())
-                return false;
-
-            if (CurrentToken != null &&
-                CurrentToken.Type == TokenType.Rel)
-            {
-                Log("Найден оператор сравнения: " + CurrentToken.ToString());
-                currentIndex++;
-                if (!Operand())
-                    return false;
-            }
-            indentLevel--;
-            Log("Выход из ComparisonExpression, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            return true;
-        }
-
-        public static bool Operand()
-        {
-            Log("Вход в Operand, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (CurrentToken == null)
-            {
-                Error("Ожидался операнд (идентификатор или константа)", -1);
-                return false;
-            }
-            if (CurrentToken.Type == TokenType.Identifier || CurrentToken.Type == TokenType.Constant)
-            {
-                Log("Найден операнд: " + CurrentToken.ToString());
-                currentIndex++;
-                indentLevel--;
-                Log("Выход из Operand, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-                return true;
             }
             else
             {
-                Error("Ожидался идентификатор или константа", CurrentToken.StartPos);
-                return false;
+                // Иначе опциональный завершающий Del принят, выходим из цикла
+                break;
             }
         }
+        return true;
+    }
 
-        public static bool ArithExpr()
+    // <Statement> → Identifier As <ArithExpr> | Output <Operand>
+    public bool Statement()
+    {
+        if (_p == null)
         {
-            Log("Вход в ArithExpr, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
+            Error("Ожидается оператор", 0);
+            return false;
+        }
+
+        if (_p.Type == TokenType.Identifier)
+        {
+            _p = _p.Next;
+            if (_p == null || _p.Type != TokenType.As)
+            {
+                Error("Ожидается 'As'", _p?.Position ?? 0);
+                return false;
+            }
+            _p = _p.Next;
+            if (!ArithExpr())
+                return false;
+            return true;
+        }
+        else if (_p.Type == TokenType.Output)
+        {
+            _p = _p.Next;
             if (!Operand())
                 return false;
-
-            while (CurrentToken != null &&
-                   (CurrentToken.Type == TokenType.Plus ||
-                    CurrentToken.Type == TokenType.Minus ||
-                    CurrentToken.Type == TokenType.Multiply ||
-                    CurrentToken.Type == TokenType.Divide))
-            {
-                Log("Найден арифметический оператор: " + CurrentToken.ToString());
-                currentIndex++;
-                if (!Operand())
-                    return false;
-            }
-            indentLevel--;
-            Log("Выход из ArithExpr, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
             return true;
         }
-
-        public static bool Operators()
+        else
         {
-            Log("Вход в Operators, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (!OperatorStmt())
-                return false;
-
-            while (CurrentToken != null && CurrentToken.Type == TokenType.Delimiter)
-            {
-                Log("Найден символ ';'");
-                currentIndex++;
-                if (!OperatorStmt())
-                    return false;
-            }
-            indentLevel--;
-            Log("Выход из Operators, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            return true;
+            Error("Ожидается идентификатор или 'Output'", _p.Position);
+            return false;
         }
+    }
 
-        public static bool OperatorStmt()
+    // <ArithExpr> → <Term> { Ao <Term> }
+    public bool ArithExpr()
+    {
+        if (!Term())
+            return false;
+        while (_p != null && _p.Type == TokenType.Ao)
         {
-            Log("Вход в OperatorStmt, текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (CurrentToken == null)
-            {
-                Error("Ожидался оператор", -1);
+            _p = _p.Next;
+            if (!Term())
                 return false;
-            }
-            if (CurrentToken.Type == TokenType.Identifier)
-            {
-                Log("Обнаружено присваивание, идентификатор: " + CurrentToken.ToString());
-                currentIndex++;
-                if (CurrentToken == null || CurrentToken.Type != TokenType.As)
-                {
-                    Error("Ожидалось '=' в присваивании", CurrentToken != null ? CurrentToken.StartPos : -1);
-                    return false;
-                }
-                Log("Найден '='");
-                currentIndex++;
-                if (!ArithExpr())
-                    return false;
-                indentLevel--;
-                Log("Выход из OperatorStmt (присваивание), текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-                return true;
-            }
-            else if (CurrentToken.Type == TokenType.Output)
-            {
-                Log("Обнаружен оператор вывода: " + CurrentToken.ToString());
-                currentIndex++;
-                if (!Operand())
-                    return false;
-                indentLevel--;
-                Log("Выход из OperatorStmt (вывод), текущий токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-                return true;
-            }
-            else
-            {
-                Error("Ожидалось присваивание или оператор вывода", CurrentToken.StartPos);
-                return false;
-            }
         }
+        return true;
+    }
 
-        public static bool Parse(List<Token> tokenList)
+    // <Term> → <Factor> { (Mul | Div) <Factor> }
+    public bool Term()
+    {
+        if (!Factor())
+            return false;
+        while (_p != null && (_p.Type == TokenType.Mul || _p.Type == TokenType.Div))
         {
-            tokens = tokenList;
-            currentIndex = 0;
-            parseLog.Clear();
-            indentLevel = 0;
-            Log("=== Начало синтаксического анализа ===");
-            bool result = DoUntilStatement();
-            Log("=== Конец синтаксического анализа ===");
-            return result;
+            _p = _p.Next;
+            if (!Factor())
+                return false;
         }
+        return true;
+    }
+
+    // <Factor> → Identifier | Constant
+    public bool Factor()
+    {
+        if (_p == null || (_p.Type != TokenType.Identifier && _p.Type != TokenType.Constant))
+        {
+            Error("Ожидается идентификатор или константа", _p?.Position ?? 0);
+            return false;
+        }
+        _p = _p.Next;
+        return true;
+    }
+
+    // <LogicalExpr> → <LogTerm> { Or <LogTerm> }
+    public bool LogicalExpr()
+    {
+        if (!LogTerm())
+            return false;
+        while (_p != null && _p.Type == TokenType.Or)
+        {
+            _p = _p.Next;
+            if (!LogTerm())
+                return false;
+        }
+        return true;
+    }
+
+    // <LogTerm> → <FactorLog> { And <FactorLog> }
+    public bool LogTerm()
+    {
+        if (!FactorLog())
+            return false;
+        while (_p != null && _p.Type == TokenType.And)
+        {
+            _p = _p.Next;
+            if (!FactorLog())
+                return false;
+        }
+        return true;
+    }
+
+    // <FactorLog> → Not <FactorLog> | <RelExpr>
+    public bool FactorLog()
+    {
+        if (_p != null && _p.Type == TokenType.Not)
+        {
+            _p = _p.Next;
+            return FactorLog();
+        }
+        else
+        {
+            return RelExpr();
+        }
+    }
+
+    // <RelExpr> → <Operand> [ Rel <Operand> ]
+    public bool RelExpr()
+    {
+        if (!Operand())
+            return false;
+        if (_p != null && _p.Type == TokenType.Rel)
+        {
+            _p = _p.Next;
+            if (!Operand())
+                return false;
+        }
+        return true;
+    }
+
+    // <Operand> → Identifier | Constant
+    public bool Operand()
+    {
+        if (_p == null || (_p.Type != TokenType.Identifier && _p.Type != TokenType.Constant))
+        {
+            Error("Ожидается идентификатор или константа", _p?.Position ?? 0);
+            return false;
+        }
+        _p = _p.Next;
+        return true;
     }
 }

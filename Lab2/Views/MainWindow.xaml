@@ -1,44 +1,35 @@
-﻿<Window x:Class="Lab2.MainWindow"
+﻿<Window x:Class="Lab2.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Lab2"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Парсер" Height="500" Width="600">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Заголовок -->
-            <RowDefinition Height="2*"/>
-            <!-- Поле ввода исходного текста -->
+            <!-- Метка для ввода -->
             <RowDefinition Height="Auto"/>
-            <!-- Кнопка "Разобрать" -->
+            <!-- Поле ввода -->
             <RowDefinition Height="Auto"/>
-            <!-- Результат анализа -->
-            <RowDefinition Height="2*"/>
-            <!-- Лог этапов разбора -->
+            <!-- Панель с кнопкой и результатом -->
+            <RowDefinition Height="*"/>
+            <!-- Область вывода ошибок -->
         </Grid.RowDefinitions>
 
-        <!-- Заголовок -->
-        <TextBlock Text="Введите исходный текст:" FontWeight="Bold" Grid.Row="0" Margin="0,0,0,5"/>
+        <!-- Метка ввода программы -->
+        <TextBlock Text="Введите программу:" FontWeight="Bold" Grid.Row="0" />
 
-        <!-- Многострочный TextBox для ввода исходного текста -->
-        <TextBox Name="InputTextBox" Grid.Row="1" AcceptsReturn="True" 
-                 VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"
-                 Text="" />
+        <!-- Поле ввода программы -->
+        <TextBox x:Name="InputTextBox" Grid.Row="1" AcceptsReturn="True" 
+                 VerticalScrollBarVisibility="Auto" Height="150" Margin="0,5,0,5"/>
 
-        <!-- Кнопка запуска синтаксического анализа -->
-        <Button Content="Разобрать" Grid.Row="2" Margin="0,10,0,10" 
-                Width="100" HorizontalAlignment="Left" Click="ParseButton_Click"/>
+        <!-- Панель с кнопкой Parse и выводом результата -->
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,5,0,5">
+            <Button x:Name="ParseButton" Content="Parse" Width="100" Click="ParseButton_Click"/>
+            <TextBlock x:Name="ResultTextBlock" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+        </StackPanel>
 
-        <!-- Вывод результата анализа -->
-        <TextBlock Name="ResultTextBlock" Grid.Row="3" TextWrapping="Wrap" 
-                   FontWeight="Bold" Foreground="DarkGreen" Margin="0,0,0,10"/>
-
-        <!-- Лог этапов разбора -->
-        <TextBox Name="ParseLogTextBox" Grid.Row="4" AcceptsReturn="True" 
-                 VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" 
-                 IsReadOnly="True" Background="LightGray"/>
+        <!-- Область для вывода сообщений об ошибках -->
+        <GroupBox Header="Сообщения об ошибках" Grid.Row="3" Margin="0,5,0,0">
+            <ListBox x:Name="ErrorsListBox"/>
+        </GroupBox>
     </Grid>
 </Window>

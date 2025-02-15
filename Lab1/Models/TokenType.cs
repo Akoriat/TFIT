@@ -2,22 +2,21 @@
 {
     public enum TokenType
     {
-        Do,
-        Until,
+        Identifier,   
+        Constant,     
+        Not,          
+        And,          
+        Or,           
+        Output,       
+        Do,           
+        Until,        
         Loop,
-        Output,
-        Not,
-        And,
-        Or,
-        Identifier,
-        Constant,
         Rel,
+        Ao,
+        Mul,
+        Div,
         As,
-        Plus,
-        Minus,
-        Multiply,
-        Divide,
-        Delimiter,
-        Unknown
+        Del,
+        EndOfFile,
     }
 }

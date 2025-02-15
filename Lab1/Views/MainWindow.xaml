@@ -1,49 +1,37 @@
-﻿<Window x:Class="LexicalAnalyzerWPF.MainWindow"
+﻿<Window x:Class="Lab1.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Lexical Analyzer" Height="600" Width="800">
+        Title="Лексический анализатор" Height="600" Width="800">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="150"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
-        <TextBlock Grid.Row="0" Text="Input Code:" FontWeight="Bold" Margin="0,0,0,5"/>
-
-        <TextBox x:Name="InputTextBox" Grid.Row="1" AcceptsReturn="True" 
-                 VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" />
-
-        <Button x:Name="AnalyzeButton" Grid.Row="2" Content="Analyze" 
-                Margin="0,5,0,5" Width="100" HorizontalAlignment="Left"
-                Click="AnalyzeButton_Click"/>
-
-        <TabControl Grid.Row="3">
-            <TabItem Header="Tokens">
-                <DataGrid x:Name="TokensDataGrid" AutoGenerateColumns="False" IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="StartPos" Binding="{Binding StartPos}" Width="60" />
-                        <DataGridTextColumn Header="EndPos" Binding="{Binding EndPos}" Width="60" />
-                        <DataGridTextColumn Header="Lexeme" Binding="{Binding Lexeme}" Width="*" />
-                        <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="120" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-            <TabItem Header="Identifiers">
-                <DataGrid x:Name="IdentifiersDataGrid" AutoGenerateColumns="False" IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Identifier" Binding="{Binding}" Width="*" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-            <TabItem Header="Constants">
-                <DataGrid x:Name="ConstantsDataGrid" AutoGenerateColumns="False" IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Constant" Binding="{Binding}" Width="*" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-        </TabControl>
+        
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Введите текст:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBox Name="InputTextBox" Width="500" Height="30" Margin="0,0,10,0"/>
+            <Button Name="AnalyzeButton" Content="Анализ" Click="AnalyzeButton_Click" Width="100" Height="30"/>
+        </StackPanel>
+        
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <GroupBox Header="Токены" Grid.Column="0" Margin="5">
+                <ListBox Name="TokensListBox" />
+            </GroupBox>
+            
+            <GroupBox Header="Константы" Grid.Column="1" Margin="5">
+                <ListBox Name="ConstantsListBox" />
+            </GroupBox>
+            
+            <GroupBox Header="Идентификаторы" Grid.Column="2" Margin="5">
+                <ListBox Name="IdentifiersListBox" />
+            </GroupBox>
+        </Grid>
     </Grid>
 </Window>

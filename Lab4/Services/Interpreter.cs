@@ -36,14 +36,14 @@ namespace Lab4.Services
         {
             if (stack.Count == 0)
                 throw new Exception("Ошибка: переполнение стека");
-            StackElement se = stack[stack.Count - 1];
+            var se = stack[stack.Count - 1];
             stack.RemoveAt(stack.Count - 1);
             return se;
         }
 
         private static void PushElm(PostfixEntry entry)
         {
-            StackElement se = new StackElement();
+            var se = new StackElement();
             switch (entry.Type)
             {
                 case EEntryType.etConst:
@@ -70,7 +70,7 @@ namespace Lab4.Services
 
         private static void SetVarAndPop(int val)
         {
-            StackElement se = Pop();
+            var se = Pop();
             if (!se.IsVar)
                 throw new Exception("SET: Ожидалась ссылка на переменную.");
             variables[se.VarIndex] = val;
@@ -85,30 +85,30 @@ namespace Lab4.Services
             stack = new List<StackElement>();
             variables = new int[Identifiers.Count];
             output = new StringBuilder();
-            StringBuilder log = new StringBuilder();
+            var log = new StringBuilder();
 
             log.AppendLine("=== Начало интерпретации ===");
             while (pos < Postfix.Count)
             {
                 log.AppendLine($"Инструкция {pos}: {Postfix[pos]}");
                 log.AppendLine($"Состояние стека до выполнения: {GetStackState()}");
-                int prevPos = pos;
+                var prevPos = pos;
                 if (Postfix[pos].Type == EEntryType.etCmd)
                 {
-                    ECmd cmd = (ECmd)Postfix[pos].Index;
+                    var cmd = (ECmd)Postfix[pos].Index;
                     switch (cmd)
                     {
                         case ECmd.JMP:
                             {
-                                int jumpAddr = PopVal();
+                                var jumpAddr = PopVal();
                                 log.AppendLine($"Выполняется команда JMP, переход на адрес {jumpAddr}");
                                 pos = jumpAddr;
                             }
                             break;
                         case ECmd.JZ:
                             {
-                                int addr = PopVal();
-                                int cond = PopVal();
+                                var addr = PopVal();
+                                var cond = PopVal();
                                 log.AppendLine($"Выполняется команда JZ: условие = {cond}, адрес = {addr}");
                                 if (cond != 0)
                                 {
@@ -124,7 +124,7 @@ namespace Lab4.Services
                             break;
                         case ECmd.SET:
                             {
-                                int value = PopVal();
+                                var value = PopVal();
                                 SetVarAndPop(value);
                                 log.AppendLine($"Выполняется SET, присваиваем значение {value}");
                                 pos++;
@@ -132,9 +132,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.ADD:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = a + b;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = a + b;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"ADD: {a} + {b} = {res}");
                                 pos++;
@@ -142,9 +142,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.SUB:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = a - b;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = a - b;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"SUB: {a} - {b} = {res}");
                                 pos++;
@@ -152,9 +152,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.MUL:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = a * b;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = a * b;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"MUL: {a} * {b} = {res}");
                                 pos++;
@@ -162,11 +162,11 @@ namespace Lab4.Services
                             break;
                         case ECmd.DIV:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
+                                var b = PopVal();
+                                var a = PopVal();
                                 if (b == 0)
                                     throw new Exception("Деление на ноль!");
-                                int res = a / b;
+                                var res = a / b;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"DIV: {a} / {b} = {res}");
                                 pos++;
@@ -174,9 +174,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.AND:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = (a != 0 && b != 0) ? 1 : 0;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = (a != 0 && b != 0) ? 1 : 0;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"AND: {a} && {b} = {res}");
                                 pos++;
@@ -184,9 +184,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.OR:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = (a != 0 || b != 0) ? 1 : 0;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = (a != 0 || b != 0) ? 1 : 0;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"OR: {a} || {b} = {res}");
                                 pos++;
@@ -194,8 +194,8 @@ namespace Lab4.Services
                             break;
                         case ECmd.NOT:
                             {
-                                int a = PopVal();
-                                int res = (a == 0) ? 1 : 0;
+                                var a = PopVal();
+                                var res = (a == 0) ? 1 : 0;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"NOT: !{a} = {res}");
                                 pos++;
@@ -203,9 +203,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.CMPE:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = (a == b) ? 1 : 0;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = (a == b) ? 1 : 0;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"CMPE: {a} == {b} ? {res}");
                                 pos++;
@@ -213,9 +213,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.CMPNE:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = (a != b) ? 1 : 0;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = (a != b) ? 1 : 0;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"CMPNE: {a} <> {b} ? {res}");
                                 pos++;
@@ -223,9 +223,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.CMPL:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = (a < b) ? 1 : 0;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = (a < b) ? 1 : 0;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"CMPL: {a} < {b} ? {res}");
                                 pos++;
@@ -233,9 +233,9 @@ namespace Lab4.Services
                             break;
                         case ECmd.CMPLE:
                             {
-                                int b = PopVal();
-                                int a = PopVal();
-                                int res = (a <= b) ? 1 : 0;
+                                var b = PopVal();
+                                var a = PopVal();
+                                var res = (a <= b) ? 1 : 0;
                                 Push(new StackElement { IsVar = false, Value = res });
                                 log.AppendLine($"CMPLE: {a} <= {b} ? {res}");
                                 pos++;
@@ -243,7 +243,7 @@ namespace Lab4.Services
                             break;
                         case ECmd.OUTPUT:
                             {
-                                int val = PopVal();
+                                var val = PopVal();
                                 output.AppendLine(val.ToString());
                                 log.AppendLine($"OUTPUT: выведено значение {val}");
                                 pos++;
@@ -273,7 +273,7 @@ namespace Lab4.Services
         {
             if (stack.Count == 0)
                 return "<пусто>";
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             foreach (var se in stack)
             {
                 sb.Append(GetValue(se) + " ");
@@ -283,8 +283,8 @@ namespace Lab4.Services
 
         private static string GetVariablesState()
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < Identifiers.Count; i++)
+            var sb = new StringBuilder();
+            for (var i = 0; i < Identifiers.Count; i++)
             {
                 sb.Append($"{Identifiers[i]}={variables[i]} ");
             }

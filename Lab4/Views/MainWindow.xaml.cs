@@ -23,10 +23,10 @@ namespace Lab4.Views
                 PostfixListBox.Items.Clear();
                 InterpretOutputTextBox.Clear();
 
-                string input = InputTextBox.Text;
+                var input = InputTextBox.Text;
 
-                LexAnalyzer lex = new LexAnalyzer();
-                bool lexOk = lex.Analyze(input);
+                var lex = new LexAnalyzer();
+                var lexOk = lex.Analyze(input);
                 PostfixEntry.ConstTable = lex.Constants;
                 PostfixEntry.IdentifierTable = lex.Identifiers;
                 if (!lexOk)
@@ -39,20 +39,20 @@ namespace Lab4.Views
                     TokensListBox.Items.Add(token.ToString());
                 }
 
-                bool parseOk = Parser.Parse(lex.Tokens, lex.Identifiers, lex.Constants);
+                var parseOk = Parser.Parse(lex.Tokens, lex.Identifiers, lex.Constants);
                 ParseLogTextBox.Text = Parser.GetParseLog();
                 if (!parseOk)
                 {
                     MessageBox.Show("Синтаксический анализ завершился с ошибками.");
                     return;
                 }
-                int i = 0;
+                var i = 0;
                 foreach (var entry in Parser.Postfix)
                 {
                     PostfixListBox.Items.Add($"{i++}: {entry}");
                 }
 
-                string interpResult = Interpreter.InterpretWithLogging(Parser.Postfix, lex.Identifiers, lex.Constants);
+                var interpResult = Interpreter.InterpretWithLogging(Parser.Postfix, lex.Identifiers, lex.Constants);
                 InterpretOutputTextBox.Text = interpResult;
 
                 MessageBox.Show("Анализ и интерпретация завершены успешно.");

@@ -22,9 +22,9 @@ namespace Lab3.Views
                 ParseLogTextBox.Clear();
                 PostfixListBox.Items.Clear();
 
-                string input = InputTextBox.Text;
-                LexAnalyzer lex = new LexAnalyzer();
-                bool lexOk = lex.Analyze(input);
+                var input = InputTextBox.Text;
+                var lex = new LexAnalyzer();
+                var lexOk = lex.Analyze(input);
                 PostfixEntry.ConstTable = lex.Constants;
                 PostfixEntry.IdentifierTable = lex.Identifiers;
                 if (!lexOk)
@@ -37,7 +37,7 @@ namespace Lab3.Views
                     TokensListBox.Items.Add(token.ToString());
                 }
 
-                bool parseOk = Parser.Parse(lex.Tokens, lex.Identifiers, lex.Constants);
+                var parseOk = Parser.Parse(lex.Tokens, lex.Identifiers, lex.Constants);
                 ParseLogTextBox.Text = Parser.GetParseLog();
 
                 if (!parseOk)
@@ -46,7 +46,7 @@ namespace Lab3.Views
                     return;
                 }
 
-                int i = 0;
+                var i = 0;
                 foreach (var entry in Parser.Postfix)
                 {
                     PostfixListBox.Items.Add($"{i++}: {entry}");

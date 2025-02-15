@@ -61,7 +61,7 @@ namespace Lab3.Services
         
         private static void SwapLastTwoEntries() // для обработки оператора >
         {
-            int count = Postfix.Count;
+            var count = Postfix.Count;
             if (count < 2) return;
             var temp = Postfix[count - 1];
             Postfix[count - 1] = Postfix[count - 2];
@@ -86,18 +86,18 @@ namespace Lab3.Services
             }
             currentIndex++;
 
-            int loopStart = Postfix.Count;
+            var loopStart = Postfix.Count;
             if (!LogicalExpression())
                 return false;
             WriteCmd(ECmd.NOT);
-            int exitJumpIndex = WriteCmdPtr(-1);
+            var exitJumpIndex = WriteCmdPtr(-1);
             WriteCmd(ECmd.JZ);
 
             if (!Operators())
                 return false;
 
             WriteCmdPtr(loopStart);
-            int jmpIndex = WriteCmd(ECmd.JMP);
+            var jmpIndex = WriteCmd(ECmd.JMP);
             SetCmdPtr(exitJumpIndex, jmpIndex + 1);
 
             if (CurrentToken == null || CurrentToken.Type != TokenType.Loop)
@@ -122,7 +122,7 @@ namespace Lab3.Services
             Log("Вход в LogicalExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
             indentLevel++;
 
-            bool hasNot = false;
+            var hasNot = false;
             if (CurrentToken != null && CurrentToken.Type == TokenType.Not)
             {
                 hasNot = true;
@@ -141,7 +141,7 @@ namespace Lab3.Services
             while (CurrentToken != null &&
                    (CurrentToken.Type == TokenType.And || CurrentToken.Type == TokenType.Or))
             {
-                Token op = CurrentToken;
+                var op = CurrentToken;
                 Log("Найден логический оператор: " + op.ToString());
                 currentIndex++;
 
@@ -167,7 +167,7 @@ namespace Lab3.Services
 
             if (CurrentToken != null && CurrentToken.Type == TokenType.Rel)
             {
-                string op = CurrentToken.Lexeme;
+                var op = CurrentToken.Lexeme;
                 Log("Найден оператор сравнения: " + op);
                 currentIndex++;
                 if (!Operand())
@@ -206,8 +206,8 @@ namespace Lab3.Services
             }
             if (CurrentToken.Type == TokenType.Identifier)
             {
-                string varName = CurrentToken.Lexeme;
-                int varIndex = Identifiers.IndexOf(varName);
+                var varName = CurrentToken.Lexeme;
+                var varIndex = Identifiers.IndexOf(varName);
                 Log("Обнаружено присваивание, идентификатор: " + CurrentToken.ToString());
                 WriteVar(varIndex);
                 currentIndex++;
@@ -256,7 +256,7 @@ namespace Lab3.Services
                     CurrentToken.Type == TokenType.Multiply ||
                     CurrentToken.Type == TokenType.Divide))
             {
-                Token op = CurrentToken;
+                var op = CurrentToken;
                 Log("Найден арифметический оператор: " + op.ToString());
                 currentIndex++;
                 if (!Operand())
@@ -288,16 +288,16 @@ namespace Lab3.Services
             }
             if (CurrentToken.Type == TokenType.Identifier)
             {
-                string varName = CurrentToken.Lexeme;
-                int varIndex = Identifiers.IndexOf(varName);
+                var varName = CurrentToken.Lexeme;
+                var varIndex = Identifiers.IndexOf(varName);
                 Log("Найден идентификатор: " + CurrentToken.ToString());
                 WriteVar(varIndex);
                 currentIndex++;
             }
             else if (CurrentToken.Type == TokenType.Constant)
             {
-                string constVal = CurrentToken.Lexeme;
-                int constIndex = Constants.IndexOf(constVal);
+                var constVal = CurrentToken.Lexeme;
+                var constIndex = Constants.IndexOf(constVal);
                 Log("Найдена константа: " + CurrentToken.ToString());
                 WriteConst(constIndex);
                 currentIndex++;
@@ -342,7 +342,7 @@ namespace Lab3.Services
             Postfix.Clear();
 
             Log("=== Начало синтаксического анализа ===");
-            bool result = DoUntilStatement();
+            var result = DoUntilStatement();
             Log("=== Конец синтаксического анализа ===");
             return result;
         }

@@ -7,8 +7,8 @@ namespace Lab0
     {
         static void Main(string[] args)
         {
-            string path = @"Resources\DefaultAutomath.txt";
-            Automath automaton = Automath.CreateFromFile(path);
+            var path = @"Resources\DefaultAutomath.txt";
+            var automaton = Automath.CreateFromFile(path);
             if (automaton == null)
                 return;
 
@@ -17,13 +17,13 @@ namespace Lab0
             automaton.ShowTable();
 
             Console.Write("\nВведите входное слово: ");
-            string inLine = Console.ReadLine();
+            var inLine = Console.ReadLine();
             automaton.ProcessInputLine(inLine);
 
             if (automaton.Type == TypeAutomaton.NKA)
             {
-                DnaAutomath nka = automaton as DnaAutomath;
-                DkaAutomath dka = nka.ToDka();
+                var nka = automaton as DnaAutomath;
+                var dka = nka.ToDka();
                 if (dka != null)
                 {
                     dka.ShowInfo();
@@ -33,8 +33,8 @@ namespace Lab0
 
             if (automaton.Type == TypeAutomaton.ENKA)
             {
-                NkaEpsilonAutomath enka = automaton as NkaEpsilonAutomath;
-                DnaAutomath nka = enka.ToNka();
+                var enka = automaton as NkaEpsilonAutomath;
+                var nka = enka.ToNka();
                 nka.ShowInfo();
                 nka.ShowTable();
             }

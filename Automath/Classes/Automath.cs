@@ -29,9 +29,9 @@ namespace Lab0.Classes
 
         public static Automath CreateFromFile(string path)
         {
-            using (StreamReader file = new StreamReader(path))
+            using (var file = new StreamReader(path))
             {
-                string parameter = file.ReadLine();
+                var parameter = file.ReadLine();
                 TypeAutomaton type;
                 if (parameter == "DKA")
                     type = TypeAutomaton.DKA;
@@ -48,17 +48,17 @@ namespace Lab0.Classes
                 }
 
                 string line;
-                string[] states = null;
-                bool gotStates = false;
-                string[] inputs = null;
-                bool gotInputs = false;
-                string initState = "";
-                bool gotInitState = false;
-                string[] finalStates = null;
-                bool gotFinalStates = false;
-                Dictionary<string, List<string>> transitions = new Dictionary<string, List<string>>();
-                bool gotTransitions = false;
-                bool emergencyStop = false;
+                string[] states = [];
+                var gotStates = false;
+                string[] inputs = [];
+                var gotInputs = false;
+                var initState = "";
+                var gotInitState = false;
+                string[] finalStates = [];
+                var gotFinalStates = false;
+                Dictionary<string, List<string>> transitions = [];
+                var gotTransitions = false;
+                var emergencyStop = false;
 
                 while ((line = file.ReadLine()) != null)
                 {
@@ -88,7 +88,7 @@ namespace Lab0.Classes
                     }
                     else if (line.StartsWith("TT:") && gotStates && gotInputs)
                     {
-                        for (int i = 0; i < states.Length; i++)
+                        for (var i = 0; i < states.Length; i++)
                         {
                             line = file.ReadLine();
                             if (line == null)
@@ -102,7 +102,7 @@ namespace Lab0.Classes
                             string[] tempStates = line.Split(' ');
                             List<string> transitionList = new List<string>();
 
-                            foreach (string state in tempStates)
+                            foreach (var state in tempStates)
                             {
                                 if (state.StartsWith("{") && state.EndsWith("}"))
                                 {
@@ -167,7 +167,7 @@ namespace Lab0.Classes
                 Console.ResetColor();
 
                 Console.Write("Состояния: ");
-                foreach (string word in States)
+                foreach (var word in States)
                 {
                     Console.Write(word + " ");
                 }
@@ -175,7 +175,7 @@ namespace Lab0.Classes
                 Console.WriteLine();
 
                 Console.Write("Алфавит: ");
-                foreach (string word in Inputs)
+                foreach (var word in Inputs)
                 {
                     Console.Write(word + " ");
                 }
@@ -187,7 +187,7 @@ namespace Lab0.Classes
                 Console.ResetColor();
 
                 Console.Write("Финальное(ые) состояние(я): ");
-                foreach (string word in FinalStates)
+                foreach (var word in FinalStates)
                 {
                     Console.Write(word + " ");
                 }
@@ -201,20 +201,20 @@ namespace Lab0.Classes
             }
         }
 
-        private string CenterText(string text, int width)
+        private static string CenterText(string text, int width)
         {
             if (text.Length >= width)
                 return text;
-            int totalPadding = width - text.Length;
-            int padLeft = totalPadding / 2;
-            int padRight = totalPadding - padLeft;
+            var totalPadding = width - text.Length;
+            var padLeft = totalPadding / 2;
+            var padRight = totalPadding - padLeft;
             return new string(' ', padLeft) + text + new string(' ', padRight);
         }
 
-        private string AlignState(string displayState, int width)
+        private static string AlignState(string displayState, int width)
         {
-            string prefix = "";
-            string numberPart = displayState;
+            var prefix = "";
+            var numberPart = displayState;
             if (displayState.StartsWith("->*"))
             {
                 prefix = "->*";
@@ -230,8 +230,8 @@ namespace Lab0.Classes
                 prefix = "*";
                 numberPart = displayState.Substring(1);
             }
-            int remainingWidth = width - prefix.Length;
-            string alignedNumber = numberPart.PadLeft(remainingWidth);
+            var remainingWidth = width - prefix.Length;
+            var alignedNumber = numberPart.PadLeft(remainingWidth);
             return prefix + alignedNumber;
         }
 
@@ -245,10 +245,10 @@ namespace Lab0.Classes
                 return;
             }
 
-            int cellWidth = Inputs.Concat(Transitions.Values.SelectMany(v => v)).Max(x => x.Length) + 2;
-            int stateColWidth = cellWidth;
+            var cellWidth = Inputs.Concat(Transitions.Values.SelectMany(v => v)).Max(x => x.Length) + 2;
+            var stateColWidth = cellWidth;
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("Таблица переходов автомата:");
 
             sb.Append(new string(' ', stateColWidth) + "|");
@@ -258,12 +258,12 @@ namespace Lab0.Classes
             }
             sb.AppendLine();
 
-            int tableWidth = stateColWidth + 1 + (Inputs.Length * (cellWidth + 1));
+            var tableWidth = stateColWidth + 1 + (Inputs.Length * (cellWidth + 1));
             sb.AppendLine(new string('-', tableWidth));
 
             foreach (var state in States)
             {
-                string displayState = state;
+                var displayState = state;
                 if (state == InitState && FinalStates.Contains(state))
                     displayState = "->*" + state;
                 else if (state == InitState)
@@ -274,8 +274,8 @@ namespace Lab0.Classes
                 sb.Append(AlignState(displayState, stateColWidth) + "|");
                 foreach (var transition in Transitions[state])
                 {
-                    string cell = transition;
-                    string trimmedCell = cell.Trim();
+                    var cell = transition;
+                    var trimmedCell = cell.Trim();
                     if (trimmedCell.Contains(",") && !(trimmedCell.StartsWith("{") && trimmedCell.EndsWith("}")))
                     {
                         cell = "{" + trimmedCell + "}";
@@ -295,10 +295,10 @@ namespace Lab0.Classes
 
         protected int MaxLengthForTable()
         {
-            int maxLength = 0;
+            var maxLength = 0;
             foreach (var item in Transitions.Values)
             {
-                foreach (string state in item)
+                foreach (var state in item)
                 {
                     if (maxLength < state.Length)
                         maxLength = state.Length;

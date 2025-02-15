@@ -1,65 +1,42 @@
-﻿using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows;
 using Lab2.Models;
 using Lab2.Services;
 
-namespace Lab2
+namespace Lab2.Views
 {
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
+            InputTextBox.Text = "do until a < 10 and not b == 5 output a loop";
         }
 
         private void ParseButton_Click(object sender, RoutedEventArgs e)
         {
-            string input = InputTextBox.Text;
-            List<Token> tokenList;
+            var input = InputTextBox.Text;
 
-            try
-            {
-                LexAnalyzer analyzer = new LexAnalyzer();
-                analyzer.Analyze(input);
-                tokenList = analyzer.Tokens;
-            }
-            catch (Exception ex)
-            {
-                ResultTextBlock.Text = "Ошибка лексического анализа: " + ex.Message;
-                ResultTextBlock.Foreground = Brushes.Red;
-                ParseLogTextBox.Text = "";
-                return;
-            }
+            Lexer lexer = new();
+            var tokens = lexer.LexAnalysis(input);
 
-            try
+            Parser parser = new(tokens);
+
+            var result = parser.DoUntil();
+
+            if (result)
             {
-                bool result = Parser.Parse(tokenList);
-                if (result)
+                ResultTextBlock.Text = "Анализ выполнен успешно.";
+                ErrorsListBox.Items.Clear();
+            }
+            else
+            {
+                ResultTextBlock.Text = "Ошибка в анализе.";
+                ErrorsListBox.Items.Clear();
+                foreach (var err in parser.ErrorMessages)
                 {
-                    ResultTextBlock.Text = "Синтаксический анализ завершён успешно.";
-                    ResultTextBlock.Foreground = Brushes.Green;
-                }
-                else
-                {
-                    ResultTextBlock.Text = "Синтаксический анализ завершился с ошибками.";
-                    ResultTextBlock.Foreground = Brushes.Red;
+                    ErrorsListBox.Items.Add(err);
                 }
             }
-            catch (Exception ex)
-            {
-                ResultTextBlock.Text = "Ошибка синтаксического анализа: " + ex.Message;
-                ResultTextBlock.Foreground = Brushes.Red;
-            }
-
-            ParseLogTextBox.Text = Parser.GetParseLog();
         }
     }
 }
