@@ -16,7 +16,6 @@ namespace Lab0.Classes
             if (!IsInitiatedCorrectly)
             {
                 Console.WriteLine("Операция 'ProcessInputLine' не может быть выполнена: автомат не проинициализирован.");
-                Console.ResetColor();
                 return false;
             }
             var emergencyBreak = false;
@@ -35,7 +34,6 @@ namespace Lab0.Classes
                     if (currentState == "~")
                     {
                         Console.WriteLine($"Запрашиваемое входным символом состояние не определено.\nИз состояния {prevState} нет перехода по символу {symbol}");
-                        Console.ResetColor();
                         emergencyBreak = true;
                         break;
                     }
@@ -44,7 +42,6 @@ namespace Lab0.Classes
                 else
                 {
                     Console.WriteLine($"Ошибка! Считанный символ '{symbol}' не входит в алфавит!");
-                    Console.ResetColor();
                     emergencyBreak = true;
                     break;
                 }
@@ -56,13 +53,11 @@ namespace Lab0.Classes
                 if (FinalStates.Contains(currentState))
                 {
                     Console.WriteLine($"Состояние {currentState} входит в число финальных состояний.");
-                    Console.ResetColor();
                     return true;
                 }
                 else
                 {
                     Console.WriteLine($"Состояние {currentState} не входит в число финальных состояний.");
-                    Console.ResetColor();
                 }
             }
             return false;

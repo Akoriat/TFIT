@@ -43,7 +43,6 @@ namespace Lab0.Classes
                 {
                     type = TypeAutomaton.None;
                     Console.WriteLine($"Введён некорректный тип автомата: '{parameter}'");
-                    Console.ResetColor();
                     return null;
                 }
 
@@ -66,24 +65,60 @@ namespace Lab0.Classes
                     {
                         line = line.Replace("Q:", "").Replace(" ", "");
                         states = line.Split(',');
+                        if(states.Length == 0)
+                        {
+                            Console.WriteLine("Введите хотя бы одно состояние.");
+                            emergencyStop = true;
+                            break;
+                        }
                         gotStates = true;
                     }
                     else if (line.StartsWith("S:"))
                     {
                         line = line.Replace("S:", "").Replace(" ", "");
                         inputs = line.Split(',');
+                        if (inputs.Length == 0)
+                        {
+                            Console.WriteLine("Введите хотя бы один символ алфавита.");
+                            emergencyStop = true;
+                            break;
+                        }
+                        if (type == TypeAutomaton.ENKA && !inputs.Contains("ε"))
+                        {
+                            Console.WriteLine("Для ЕНКА должно быть задано состояние ε.");
+                            emergencyStop = true;
+                            break;
+                        }
                         gotInputs = true;
                     }
                     else if (line.StartsWith("Q0:"))
                     {
                         line = line.Replace("Q0:", "").Replace(" ", "");
                         initState = line;
+                        if (initState.Length == 0)
+                        {
+                            Console.WriteLine("Введите начальное состояние.");
+                            emergencyStop = true;
+                            break;
+                        }
+                        if (initState.Split(", ").Length > 1 && type == TypeAutomaton.DKA)
+                        {
+                            Console.WriteLine("Для ДКА нельзя задать больше одного начального состояния");
+                            emergencyStop = true;
+                            break;
+                        }
                         gotInitState = true;
                     }
                     else if (line.StartsWith("F:"))
                     {
                         line = line.Replace("F:", "").Replace(" ", "");
                         finalStates = line.Split(',');
+                        if (finalStates.Length == 0)
+                        {
+                            Console.WriteLine("Введите хотя бы одно финальное состояние.");
+                            emergencyStop = true;
+                            break;
+                        }
                         gotFinalStates = true;
                     }
                     else if (line.StartsWith("TT:") && gotStates && gotInputs)
@@ -94,7 +129,6 @@ namespace Lab0.Classes
                             if (line == null)
                             {
                                 Console.WriteLine("Ошибка! Недостаточно строк в таблице переходов.");
-                                Console.ResetColor();
                                 emergencyStop = true;
                                 break;
                             }
@@ -106,7 +140,16 @@ namespace Lab0.Classes
                             {
                                 if (state.StartsWith("{") && state.EndsWith("}"))
                                 {
-                                    transitionList.Add(state.Trim('{', '}'));
+                                    if (type == TypeAutomaton.DKA)
+                                    {
+                                        Console.WriteLine("Для ДКА нельзя задавать множественные состояния.");
+                                        emergencyStop = true;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        transitionList.Add(state);
+                                    }
                                 }
                                 else
                                 {
@@ -116,7 +159,6 @@ namespace Lab0.Classes
                                 if (!state.StartsWith("{") && !states.Contains(state) && state != "~")
                                 {
                                     Console.WriteLine($"Ошибка! Состояние '{state}', указанное в таблице переходов, не определено!");
-                                    Console.ResetColor();
                                     emergencyStop = true;
                                     break;
                                 }
@@ -134,7 +176,6 @@ namespace Lab0.Classes
                 if (emergencyStop || !(gotStates && gotInputs && gotInitState && gotFinalStates && gotTransitions))
                 {
                     Console.WriteLine("Автомат не может быть инициализирован из-за критической ошибки!");
-                    Console.ResetColor();
                     return null;
                 }
 
@@ -164,14 +205,12 @@ namespace Lab0.Classes
                     Console.WriteLine("Недетерминированный КА");
                 else if (Type == TypeAutomaton.ENKA)
                     Console.WriteLine("Недетерминированный КА с е-переходами");
-                Console.ResetColor();
 
                 Console.Write("Состояния: ");
                 foreach (var word in States)
                 {
                     Console.Write(word + " ");
                 }
-                Console.ResetColor();
                 Console.WriteLine();
 
                 Console.Write("Алфавит: ");
@@ -179,25 +218,21 @@ namespace Lab0.Classes
                 {
                     Console.Write(word + " ");
                 }
-                Console.ResetColor();
                 Console.WriteLine();
 
                 Console.Write("Начальное состояние: ");
                 Console.WriteLine(InitState);
-                Console.ResetColor();
 
                 Console.Write("Финальное(ые) состояние(я): ");
                 foreach (var word in FinalStates)
                 {
                     Console.Write(word + " ");
                 }
-                Console.ResetColor();
                 Console.WriteLine();
             }
             else
             {
                 Console.WriteLine("Операция 'Show' не может быть выполнена: автомат не проинициализирован.");
-                Console.ResetColor();
             }
         }
 
@@ -241,7 +276,6 @@ namespace Lab0.Classes
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Операция 'ShowTable' не может быть выполнена: автомат не проинициализирован.");
-                Console.ResetColor();
                 return;
             }
 

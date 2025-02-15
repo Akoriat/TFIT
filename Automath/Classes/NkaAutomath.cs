@@ -16,7 +16,6 @@ namespace Lab0.Classes
             if (!IsInitiatedCorrectly)
             {
                 Console.WriteLine("Операция 'ProcessInputLine' не может быть выполнена: автомат не проинициализирован.");
-                Console.ResetColor();
                 return false;
             }
             var emergencyBreak = false;
@@ -48,7 +47,6 @@ namespace Lab0.Classes
                             if (tempState == "~" && currentStates.Count == 1)
                             {
                                 Console.WriteLine($"Запрашиваемое входным символом состояние не определено.\nИз состояния {currentStates[0]} нет перехода по символу {symbol}");
-                                Console.ResetColor();
                                 emergencyBreak = true;
                                 return false;
                             }
@@ -60,7 +58,6 @@ namespace Lab0.Classes
                     if (reachableStates.Count == 0)
                     {
                         Console.WriteLine($"Запрашиваемое входным символом состояние не определено.\nИз состояний нет перехода по символу {symbol}");
-                        Console.ResetColor();
                         emergencyBreak = true;
                         return false;
                     }
@@ -77,7 +74,6 @@ namespace Lab0.Classes
                 else
                 {
                     Console.WriteLine($"Ошибка! Считанный символ '{symbol}' не входит в алфавит!");
-                    Console.ResetColor();
                     emergencyBreak = true;
                     break;
                 }
@@ -92,7 +88,6 @@ namespace Lab0.Classes
                         Console.Write($"'{item}', ");
                     }
                     Console.WriteLine("входит в число финальных состояний.");
-                    Console.ResetColor();
                     return true;
                 }
                 else
@@ -103,7 +98,6 @@ namespace Lab0.Classes
                         Console.Write($"'{item}', ");
                     }
                     Console.WriteLine("не входит в число финальных состояний.");
-                    Console.ResetColor();
                 }
             }
             return false;
@@ -112,7 +106,6 @@ namespace Lab0.Classes
         public DkaAutomath ToDka()
         {
             Console.WriteLine("\nВыполняется преобразование НКА к ДКА:\n");
-            Console.ResetColor();
 
             List<string> newStates = new List<string>();
             List<string> newFinalStates = new List<string>();

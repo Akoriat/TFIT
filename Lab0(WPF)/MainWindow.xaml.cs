@@ -153,23 +153,18 @@ namespace WpfAutomath
                 return;
             }
 
-            // Очищаем второй TextBox перед обработкой
             txtDetailedOutput.Clear();
 
-            // 1) Сохраняем "старый" поток вывода (который сейчас идёт в txtOutput)
             var oldWriter = Console.Out;
 
             try
             {
-                // 2) Временно перенаправим Console в txtDetailedOutput
+
                 Console.SetOut(new TextBoxStreamWriter(txtDetailedOutput));
 
-                // 3) Теперь все Console.WriteLine() внутри ProcessInputLine (и т.п.)
-                //    будут попадать во второй TextBox:
                 var inputWord = txtInputWord.Text.Trim();
                 var result = _automath.ProcessInputLine(inputWord);
 
-                // Здесь же можно дополнительно дописать итоги
                 if (result)
                     Console.WriteLine("Слово принято автоматом.");
                 else
@@ -177,7 +172,6 @@ namespace WpfAutomath
             }
             finally
             {
-                // 4) Восстанавливаем старый поток (снова пишем в txtOutput)
                 Console.SetOut(oldWriter);
             }
         }
@@ -185,7 +179,6 @@ namespace WpfAutomath
 
         private Automath CreateAutomathFromFields()
         {
-            // Определение типа автомата
             var typeStr = (cbType.SelectedItem as ComboBoxItem)?.Content as string;
             TypeAutomaton type;
             if (typeStr == "DKA")
@@ -200,7 +193,6 @@ namespace WpfAutomath
                 return null;
             }
 
-            // Получение состояний
             string[] states = txtStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                              .Select(s => s.Trim()).ToArray();
             if (states.Length == 0)
@@ -208,8 +200,12 @@ namespace WpfAutomath
                 MessageBox.Show("Введите хотя бы одно состояние.");
                 return null;
             }
+            if (type == TypeAutomaton.ENKA && !states.Contains("ε"))
+            {
+                MessageBox.Show("Для ЕНКА должно быть задано состояние ε.");
+                return null;
+            }
 
-            // Получение алфавита
             string[] inputs = txtAlphabet.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                               .Select(s => s.Trim()).ToArray();
             if (inputs.Length == 0)
@@ -218,15 +214,18 @@ namespace WpfAutomath
                 return null;
             }
 
-            // Получение начального состояния
             var initState = txtInitialState.Text.Trim();
             if (string.IsNullOrEmpty(initState))
             {
                 MessageBox.Show("Введите начальное состояние.");
                 return null;
             }
+            if(initState.Split(", ").Length > 1 && type == TypeAutomaton.DKA)
+            {
+                MessageBox.Show("Для ДКА нельзя задать больше одного начального состояния");
+                return null;
+            }
 
-            // Получение финальных состояний
             string[] finalStates = txtFinalStates.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                                       .Select(s => s.Trim()).ToArray();
             if (finalStates.Length == 0)
@@ -235,7 +234,6 @@ namespace WpfAutomath
                 return null;
             }
 
-            // Получение таблицы переходов
             var transitions = new Dictionary<string, List<string>>();
             string[] lines = txtTransitions.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             if (lines.Length != states.Length)
@@ -253,18 +251,23 @@ namespace WpfAutomath
                     return null;
                 }
 
-                // Обработка множественных состояний (например, {2,3})
                 List<string> transitionList = new List<string>();
                 foreach (var part in parts)
                 {
                     if (part.StartsWith("{") && part.EndsWith("}"))
                     {
-                        // Убираем фигурные скобки и добавляем как одно значение
-                        transitionList.Add(part.Trim('{', '}'));
+                        if (type == TypeAutomaton.DKA)
+                        {
+                            MessageBox.Show("Для ДКА нельзя задавать множественные состояния.");
+                            return null;
+                        }
+                        else
+                        {
+                            transitionList.Add(part);
+                        }
                     }
                     else
                     {
-                        // Одиночное состояние
                         transitionList.Add(part);
                     }
                 }
@@ -272,7 +275,6 @@ namespace WpfAutomath
                 transitions.Add(states[i], transitionList);
             }
 
-            // Создание автомата в зависимости от типа
             switch (type)
             {
                 case TypeAutomaton.DKA:
