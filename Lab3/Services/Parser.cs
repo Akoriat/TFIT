@@ -1,350 +1,357 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Lab3.Models;
+﻿using Lab3.Models;
 
 namespace Lab3.Services
 {
-    public static class Parser
+    public class Parser
     {
-        private static List<Token> tokens;
-        private static int currentIndex;
-        private static StringBuilder parseLog = new StringBuilder();
-        private static int indentLevel = 0;
+        private Token? _p;
+        public List<string> ErrorMessages { get; } = new List<string>();
 
-        public static List<PostfixEntry> Postfix { get; private set; } = new List<PostfixEntry>();
-        public static List<string> Identifiers { get; set; }
-        public static List<string> Constants { get; set; }
+        private List<PostfixEntry> _postfix = new();
 
-        private static Token CurrentToken => currentIndex < tokens.Count ? tokens[currentIndex] : null;
-        public static string GetParseLog() => parseLog.ToString();
+        private List<string> VarTable = new List<string>();
+        private List<string> ConstTable = new List<string>();
+        public IReadOnlyList<string> Variables => VarTable;
+        public IReadOnlyList<string> Constants => ConstTable;
 
-        private static void Log(string message)
+        public List<PostfixEntry> Postfix => _postfix;
+
+        public Parser(Token? startToken)
         {
-            parseLog.AppendLine(new string(' ', indentLevel * 2) + message);
+            _p = startToken;
         }
 
-        private static void Error(string msg, int pos)
+        private void Error(string msg, int pos)
         {
-            throw new Exception($"Ошибка на позиции {pos}: {msg}");
+            string error = $"Ошибка в позиции {pos}: {msg}";
+            ErrorMessages.Add(error);
+            Console.WriteLine(error);
         }
 
-        private static int WriteCmd(ECmd cmd)
+        private int WriteCmd(ECmd cmd)
         {
-            Postfix.Add(new PostfixEntry { Type = EEntryType.etCmd, Index = (int)cmd });
-            return Postfix.Count - 1;
+            PostfixEntry entry = new PostfixEntry { Type = EEntryType.EtCmd, Index = (int)cmd };
+            _postfix.Add(entry);
+            return _postfix.Count - 1;
         }
 
-        private static int WriteVar(int varIndex)
+        private int WriteVar(string var)
         {
-            Postfix.Add(new PostfixEntry { Type = EEntryType.etVar, Index = varIndex });
-            return Postfix.Count - 1;
-        }
-
-        private static int WriteConst(int constIndex)
-        {
-            Postfix.Add(new PostfixEntry { Type = EEntryType.etConst, Index = constIndex });
-            return Postfix.Count - 1;
-        }
-
-        private static int WriteCmdPtr(int ptr)
-        {
-            Postfix.Add(new PostfixEntry { Type = EEntryType.etCmdPtr, Index = ptr });
-            return Postfix.Count - 1;
-        }
-
-        private static void SetCmdPtr(int ind, int ptr)
-        {
-            Postfix[ind] = new PostfixEntry { Type = EEntryType.etCmdPtr, Index = ptr };
-        }
-
-        
-        private static void SwapLastTwoEntries() // для обработки оператора >
-        {
-            var count = Postfix.Count;
-            if (count < 2) return;
-            var temp = Postfix[count - 1];
-            Postfix[count - 1] = Postfix[count - 2];
-            Postfix[count - 2] = temp;
-        }
-
-        public static bool DoUntilStatement()
-        {
-            Log("Вход в DoUntilStatement, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (CurrentToken == null || CurrentToken.Type != TokenType.Do)
+            int index = VarTable.IndexOf(var);
+            if (index == -1)
             {
-                Error("Ожидалось 'do'", CurrentToken != null ? CurrentToken.StartPos : -1);
+                VarTable.Add(var);
+                index = VarTable.Count - 1;
+            }
+            PostfixEntry entry = new PostfixEntry { Type = EEntryType.EtVar, Index = index };
+            _postfix.Add(entry);
+            return _postfix.Count - 1;
+        }
+
+        private int WriteConst(string cons)
+        {
+            int index = ConstTable.IndexOf(cons);
+            if (index == -1)
+            {
+                ConstTable.Add(cons);
+                index = ConstTable.Count - 1;
+            }
+            PostfixEntry entry = new PostfixEntry { Type = EEntryType.EtConst, Index = index };
+            _postfix.Add(entry);
+            return _postfix.Count - 1;
+        }
+
+        private int WriteCmdPtr(int ptr)
+        {
+            PostfixEntry entry = new PostfixEntry { Type = EEntryType.EtCmdPtr, Index = ptr };
+            _postfix.Add(entry);
+            return _postfix.Count - 1;
+        }
+
+        private void SetCmdPtr(int ind, int ptr)
+        {
+            if (ind >= 0 && ind < _postfix.Count)
+            {
+                _postfix[ind].Index = ptr;
+            }
+        }
+
+        public bool DoUntil(bool isTopLevel = false)
+        {
+            int indFirst = _postfix.Count;
+
+            if (_p == null || _p.Type != TokenType.Do)
+            {
+                Error("Ожидается 'do'", _p?.Position ?? 0);
                 return false;
             }
-            currentIndex++;
+            _p = _p.Next;
 
-            if (CurrentToken == null || CurrentToken.Type != TokenType.Until)
+            if (_p == null || _p.Type != TokenType.Until)
             {
-                Error("Ожидалось 'until'", CurrentToken != null ? CurrentToken.StartPos : -1);
+                Error("Ожидается 'until'", _p?.Position ?? 0);
                 return false;
             }
-            currentIndex++;
+            _p = _p.Next;
 
-            var loopStart = Postfix.Count;
-            if (!LogicalExpression())
+            if (!LogicalExpr())
                 return false;
-            WriteCmd(ECmd.NOT);
-            var exitJumpIndex = WriteCmdPtr(-1);
+
+            int jzPtrIndex = WriteCmdPtr(-1);
             WriteCmd(ECmd.JZ);
 
             if (!Operators())
                 return false;
 
-            WriteCmdPtr(loopStart);
-            var jmpIndex = WriteCmd(ECmd.JMP);
-            SetCmdPtr(exitJumpIndex, jmpIndex + 1);
-
-            if (CurrentToken == null || CurrentToken.Type != TokenType.Loop)
+            if (_p == null || _p.Type != TokenType.Loop)
             {
-                Error("Ожидалось 'loop'", CurrentToken != null ? CurrentToken.StartPos : -1);
+                Error("Ожидается 'loop'", _p?.Position ?? 0);
                 return false;
             }
-            currentIndex++;
+            _p = _p.Next;
 
-            indentLevel--;
-            Log("Выход из DoUntilStatement, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            if (currentIndex < tokens.Count)
+            WriteCmdPtr(indFirst);
+            int indJMP = WriteCmd(ECmd.JMP);
+
+            SetCmdPtr(jzPtrIndex, indJMP + 1);
+
+            if (isTopLevel)
             {
-                Error("Лишние токены после 'loop'", CurrentToken != null ? CurrentToken.StartPos : -1);
-                return false;
-            }
-            return true;
-        }
-
-        public static bool LogicalExpression()
-        {
-            Log("Вход в LogicalExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-
-            var hasNot = false;
-            if (CurrentToken != null && CurrentToken.Type == TokenType.Not)
-            {
-                hasNot = true;
-                Log("Найден 'not'");
-                currentIndex++;
-            }
-
-            if (!ComparisonExpression())
-                return false;
-
-            if (hasNot)
-            {
-                WriteCmd(ECmd.NOT);
-            }
-
-            while (CurrentToken != null &&
-                   (CurrentToken.Type == TokenType.And || CurrentToken.Type == TokenType.Or))
-            {
-                var op = CurrentToken;
-                Log("Найден логический оператор: " + op.ToString());
-                currentIndex++;
-
-                if (!ComparisonExpression())
-                    return false;
-
-                if (op.Type == TokenType.And)
-                    WriteCmd(ECmd.AND);
-                else if (op.Type == TokenType.Or)
-                    WriteCmd(ECmd.OR);
-            }
-            indentLevel--;
-            Log("Выход из LogicalExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            return true;
-        }
-
-        public static bool ComparisonExpression()
-        {
-            Log("Вход в ComparisonExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (!Operand())
-                return false;
-
-            if (CurrentToken != null && CurrentToken.Type == TokenType.Rel)
-            {
-                var op = CurrentToken.Lexeme;
-                Log("Найден оператор сравнения: " + op);
-                currentIndex++;
-                if (!Operand())
-                    return false;
-
-                ECmd cmd;
-                if (op == "<")
-                    cmd = ECmd.CMPL;
-                else if (op == ">")
+                if (_p != null && _p.Type != TokenType.EndOfFile)
                 {
-                    SwapLastTwoEntries();
-                    cmd = ECmd.CMPL;
+                    Error("Лишние символы", _p.Position);
+                    return false;
                 }
-                else if (op == "==")
-                    cmd = ECmd.CMPE;
-                else if (op == "<>")
-                    cmd = ECmd.CMPNE;
+            }
+            return true;
+        }
+
+        public bool Operators()
+        {
+            if (!Statement())
+                return false;
+            while (_p != null && _p.Type == TokenType.Del)
+            {
+                _p = _p.Next;
+                if (_p != null &&
+                   (_p.Type == TokenType.Identifier || _p.Type == TokenType.Output || _p.Type == TokenType.Do))
+                {
+                    if (!Statement())
+                        return false;
+                }
                 else
-                    cmd = ECmd.CMPL;
-
-                WriteCmd(cmd);
+                {
+                    break;
+                }
             }
-            indentLevel--;
-            Log("Выход из ComparisonExpression, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
             return true;
         }
 
-        public static bool OperatorStmt()
+        public bool Statement()
         {
-            Log("Вход в OperatorStmt, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (CurrentToken == null)
+            if (_p == null)
             {
-                Error("Ожидался оператор", -1);
+                Error("Ожидается оператор", 0);
                 return false;
             }
-            if (CurrentToken.Type == TokenType.Identifier)
+            if (_p.Type == TokenType.Do)
             {
-                var varName = CurrentToken.Lexeme;
-                var varIndex = Identifiers.IndexOf(varName);
-                Log("Обнаружено присваивание, идентификатор: " + CurrentToken.ToString());
-                WriteVar(varIndex);
-                currentIndex++;
-                if (CurrentToken == null || CurrentToken.Type != TokenType.As)
+                return DoUntil();
+            }
+            else if (_p.Type == TokenType.Identifier)
+            {
+                string varName = _p.Lexeme;
+                WriteVar(varName);
+                _p = _p.Next;
+                if (_p == null || _p.Type != TokenType.As)
                 {
-                    Error("Ожидалось '=' в присваивании", CurrentToken != null ? CurrentToken.StartPos : -1);
+                    Error("Ожидается '=' (as)", _p?.Position ?? 0);
                     return false;
                 }
-                Log("Найден '='");
-                currentIndex++;
+                _p = _p.Next;
                 if (!ArithExpr())
                     return false;
                 WriteCmd(ECmd.SET);
-                indentLevel--;
-                Log("Выход из OperatorStmt (присваивание), токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
                 return true;
             }
-            else if (CurrentToken.Type == TokenType.Output)
+            else if (_p.Type == TokenType.Output)
             {
-                Log("Обнаружен оператор вывода: " + CurrentToken.ToString());
-                currentIndex++;
+                _p = _p.Next;
                 if (!Operand())
                     return false;
-                WriteCmd(ECmd.OUTPUT);
-                indentLevel--;
-                Log("Выход из OperatorStmt (вывод), токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+                WriteCmd(ECmd.OUT);
                 return true;
             }
             else
             {
-                Error("Ожидалось присваивание или оператор вывода", CurrentToken.StartPos);
+                Error("Ожидается идентификатор, 'output' или 'do'", _p.Position);
                 return false;
             }
         }
 
-        public static bool ArithExpr()
+        public bool ArithExpr()
         {
-            Log("Вход в ArithExpr, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (!Operand())
+            if (!Term())
                 return false;
-
-            while (CurrentToken != null &&
-                   (CurrentToken.Type == TokenType.Plus ||
-                    CurrentToken.Type == TokenType.Minus ||
-                    CurrentToken.Type == TokenType.Multiply ||
-                    CurrentToken.Type == TokenType.Divide))
+            while (_p != null && _p.Type == TokenType.Ao)
             {
-                var op = CurrentToken;
-                Log("Найден арифметический оператор: " + op.ToString());
-                currentIndex++;
-                if (!Operand())
-                    return false;
                 ECmd cmd;
-                if (op.Type == TokenType.Plus)
+                if (_p.Lexeme == "+")
                     cmd = ECmd.ADD;
-                else if (op.Type == TokenType.Minus)
+                else if (_p.Lexeme == "-")
                     cmd = ECmd.SUB;
-                else if (op.Type == TokenType.Multiply)
-                    cmd = ECmd.MUL;
                 else
-                    cmd = ECmd.DIV;
+                {
+                    Error("Неизвестная арифметическая операция", _p.Position);
+                    return false;
+                }
+                _p = _p.Next;
+                if (!Term())
+                    return false;
                 WriteCmd(cmd);
             }
-            indentLevel--;
-            Log("Выход из ArithExpr, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
             return true;
         }
 
-        public static bool Operand()
+        public bool Term()
         {
-            Log("Вход в Operand, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (CurrentToken == null)
+            if (!Factor())
+                return false;
+            while (_p != null && (_p.Type == TokenType.Mul || _p.Type == TokenType.Div))
             {
-                Error("Ожидался операнд (идентификатор или константа)", -1);
+                ECmd cmd = _p.Type == TokenType.Mul ? ECmd.MUL : ECmd.DIV;
+                _p = _p.Next;
+                if (!Factor())
+                    return false;
+                WriteCmd(cmd);
+            }
+            return true;
+        }
+
+        public bool Factor()
+        {
+            if (_p == null)
+            {
+                Error("Ожидается идентификатор или константа", 0);
                 return false;
             }
-            if (CurrentToken.Type == TokenType.Identifier)
+            if (_p.Type == TokenType.Identifier)
             {
-                var varName = CurrentToken.Lexeme;
-                var varIndex = Identifiers.IndexOf(varName);
-                Log("Найден идентификатор: " + CurrentToken.ToString());
-                WriteVar(varIndex);
-                currentIndex++;
+                WriteVar(_p.Lexeme);
             }
-            else if (CurrentToken.Type == TokenType.Constant)
+            else if (_p.Type == TokenType.Constant)
             {
-                var constVal = CurrentToken.Lexeme;
-                var constIndex = Constants.IndexOf(constVal);
-                Log("Найдена константа: " + CurrentToken.ToString());
-                WriteConst(constIndex);
-                currentIndex++;
+                WriteConst(_p.Lexeme);
             }
             else
             {
-                Error("Ожидался идентификатор или константа", CurrentToken.StartPos);
+                Error("Ожидается идентификатор или константа", _p.Position);
                 return false;
             }
-            indentLevel--;
-            Log("Выход из Operand, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
+            _p = _p.Next;
             return true;
         }
 
-        public static bool Operators()
+        public bool LogicalExpr()
         {
-            Log("Вход в Operators, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
-            indentLevel++;
-            if (!OperatorStmt())
+            if (!LogTerm())
                 return false;
-
-            while (CurrentToken != null && CurrentToken.Type == TokenType.Delimiter)
+            while (_p != null && _p.Type == TokenType.Or)
             {
-                Log("Найден символ ';'");
-                currentIndex++;
-                if (!OperatorStmt())
+                _p = _p.Next;
+                if (!LogTerm())
                     return false;
+                WriteCmd(ECmd.OR);
             }
-            indentLevel--;
-            Log("Выход из Operators, токен: " + (CurrentToken != null ? CurrentToken.ToString() : "null"));
             return true;
         }
 
-        public static bool Parse(List<Token> tokenList, List<string> idTable, List<string> constTable)
+        public bool LogTerm()
         {
-            tokens = tokenList;
-            Identifiers = idTable;
-            Constants = constTable;
-            currentIndex = 0;
-            parseLog.Clear();
-            indentLevel = 0;
-            Postfix.Clear();
+            if (!FactorLog())
+                return false;
+            while (_p != null && _p.Type == TokenType.And)
+            {
+                _p = _p.Next;
+                if (!FactorLog())
+                    return false;
+                WriteCmd(ECmd.AND);
+            }
+            return true;
+        }
 
-            Log("=== Начало синтаксического анализа ===");
-            var result = DoUntilStatement();
-            Log("=== Конец синтаксического анализа ===");
-            return result;
+        public bool FactorLog()
+        {
+            if (_p != null && _p.Type == TokenType.Not)
+            {
+                _p = _p.Next;
+                if (!FactorLog())
+                    return false;
+                WriteCmd(ECmd.NOT);
+                return true;
+            }
+            else
+            {
+                return RelExpr();
+            }
+        }
+
+        public bool RelExpr()
+        {
+            if (!Operand())
+                return false;
+            if (_p != null && _p.Type == TokenType.Rel)
+            {
+                ECmd cmd;
+                var op = _p.Lexeme;
+                switch (op)
+                {
+                    case "<":
+                        cmd = ECmd.CMPL;
+                        break;
+                    case "<>":
+                        cmd = ECmd.CMPNE;
+                        break;
+                    case "==":
+                        cmd = ECmd.CMPE;
+                        break;
+                    case ">":
+                        cmd = ECmd.CMPG;
+                        break;
+                    default:
+                        Error("Неизвестный оператор сравнения", _p.Position);
+                        return false;
+                }
+                _p = _p.Next;
+                if (!Operand())
+                    return false;
+                WriteCmd(cmd);
+            }
+            return true;
+        }
+
+        public bool Operand()
+        {
+            if (_p == null)
+            {
+                Error("Ожидается идентификатор или константа", 0);
+                return false;
+            }
+            if (_p.Type == TokenType.Identifier)
+            {
+                WriteVar(_p.Lexeme);
+            }
+            else if (_p.Type == TokenType.Constant)
+            {
+                WriteConst(_p.Lexeme);
+            }
+            else
+            {
+                Error("Ожидается идентификатор или константа", _p.Position);
+                return false;
+            }
+            _p = _p.Next;
+            return true;
         }
     }
 }

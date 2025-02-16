@@ -5,29 +5,29 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Метка для ввода -->
+            
             <RowDefinition Height="Auto"/>
-            <!-- Поле ввода -->
+            
             <RowDefinition Height="Auto"/>
-            <!-- Панель с кнопкой и результатом -->
+            
             <RowDefinition Height="*"/>
-            <!-- Область вывода ошибок -->
+            
         </Grid.RowDefinitions>
 
-        <!-- Метка ввода программы -->
+        
         <TextBlock Text="Введите программу:" FontWeight="Bold" Grid.Row="0" />
 
-        <!-- Поле ввода программы -->
+        
         <TextBox x:Name="InputTextBox" Grid.Row="1" AcceptsReturn="True" 
                  VerticalScrollBarVisibility="Auto" Height="150" Margin="0,5,0,5"/>
 
-        <!-- Панель с кнопкой Parse и выводом результата -->
+        
         <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,5,0,5">
             <Button x:Name="ParseButton" Content="Parse" Width="100" Click="ParseButton_Click"/>
             <TextBlock x:Name="ResultTextBlock" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
         </StackPanel>
 
-        <!-- Область для вывода сообщений об ошибках -->
+        
         <GroupBox Header="Сообщения об ошибках" Grid.Row="3" Margin="0,5,0,0">
             <ListBox x:Name="ErrorsListBox"/>
         </GroupBox>

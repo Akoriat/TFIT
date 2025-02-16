@@ -21,7 +21,7 @@ namespace Lab2.Views
 
             Parser parser = new(tokens);
 
-            var result = parser.DoUntil();
+            var result = parser.DoUntil(true);
 
             if (result)
             {

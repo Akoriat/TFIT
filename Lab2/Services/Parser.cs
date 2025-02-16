@@ -2,24 +2,10 @@
 
 namespace Lab2.Services;
 
-// <DoUntil>      → Do Until <LogicalExpr> <Operators> Loop
-// <Operators>    → <Statement> { Del <Statement> }
-// <Statement>    → Identifier As <ArithExpr>
-//                | Output <Operand>
-// <ArithExpr>    → <Term> { Ao <Term> }
-// <Term>         → <Factor> { (Mul | Div) <Factor> }
-// <Factor>       → Identifier | Constant
-// <LogicalExpr>  → <LogTerm> { Or <LogTerm> }
-// <LogTerm>      → <FactorLog> { And <FactorLog> }
-// <FactorLog>    → Not <FactorLog>
-//                | <RelExpr>
-// <RelExpr>      → <Operand> [ Rel <Operand> ]
-// <Operand>      → Identifier | Constant
-
 public class Parser
 {
     private Token? _p;
-    public List<string> ErrorMessages { get; } = [];
+    public List<string> ErrorMessages { get; } = new List<string>();
 
     public Parser(Token? startToken)
     {
@@ -28,13 +14,12 @@ public class Parser
 
     private void Error(string msg, int pos)
     {
-        var error = $"Ошибка в позиции {pos}: {msg}";
+        string error = $"Ошибка в позиции {pos}: {msg}";
         ErrorMessages.Add(error);
         Console.WriteLine(error);
     }
 
-    // <DoUntil> → Do Until <LogicalExpr> <Operators> Loop
-    public bool DoUntil()
+    public bool DoUntil(bool isTopLevel = false)
     {
         if (_p == null || _p.Type != TokenType.Do)
         {
@@ -63,44 +48,39 @@ public class Parser
         }
         _p = _p.Next;
 
-        if (_p != null && _p.Type != TokenType.EndOfFile)
+        if (isTopLevel)
         {
-            Error("Лишние символы", _p.Position);
-            return false;
+            if (_p != null && _p.Type != TokenType.EndOfFile)
+            {
+                Error("Лишние символы", _p.Position);
+                return false;
+            }
         }
         return true;
     }
 
-    // <Operators> → <Statement> { Del <Statement> } [ Del ]
     public bool Operators()
     {
-        // Обязательно должно быть как минимум одно Statement
         if (!Statement())
             return false;
 
-        // Обработка последовательности "Del <Statement>"
         while (_p != null && _p.Type == TokenType.Del)
         {
-            // Сначала потребляем разделитель Del
             _p = _p.Next;
-
-            // Если следующий токен допускает начало оператора (Identifier или Output),
-            // то разбираем очередной Statement
-            if (_p != null && (_p.Type == TokenType.Identifier || _p.Type == TokenType.Output))
+            if (_p != null &&
+               (_p.Type == TokenType.Identifier || _p.Type == TokenType.Output || _p.Type == TokenType.Do))
             {
                 if (!Statement())
                     return false;
             }
             else
             {
-                // Иначе опциональный завершающий Del принят, выходим из цикла
                 break;
             }
         }
         return true;
     }
 
-    // <Statement> → Identifier As <ArithExpr> | Output <Operand>
     public bool Statement()
     {
         if (_p == null)
@@ -109,7 +89,11 @@ public class Parser
             return false;
         }
 
-        if (_p.Type == TokenType.Identifier)
+        if (_p.Type == TokenType.Do)
+        {
+            return DoUntil();
+        }
+        else if (_p.Type == TokenType.Identifier)
         {
             _p = _p.Next;
             if (_p == null || _p.Type != TokenType.As)
@@ -131,12 +115,11 @@ public class Parser
         }
         else
         {
-            Error("Ожидается идентификатор или 'Output'", _p.Position);
+            Error("Ожидается идентификатор, 'Output' или 'Do'", _p.Position);
             return false;
         }
     }
 
-    // <ArithExpr> → <Term> { Ao <Term> }
     public bool ArithExpr()
     {
         if (!Term())
@@ -150,7 +133,6 @@ public class Parser
         return true;
     }
 
-    // <Term> → <Factor> { (Mul | Div) <Factor> }
     public bool Term()
     {
         if (!Factor())
@@ -164,7 +146,6 @@ public class Parser
         return true;
     }
 
-    // <Factor> → Identifier | Constant
     public bool Factor()
     {
         if (_p == null || (_p.Type != TokenType.Identifier && _p.Type != TokenType.Constant))
@@ -176,7 +157,6 @@ public class Parser
         return true;
     }
 
-    // <LogicalExpr> → <LogTerm> { Or <LogTerm> }
     public bool LogicalExpr()
     {
         if (!LogTerm())
@@ -190,7 +170,6 @@ public class Parser
         return true;
     }
 
-    // <LogTerm> → <FactorLog> { And <FactorLog> }
     public bool LogTerm()
     {
         if (!FactorLog())
@@ -204,7 +183,6 @@ public class Parser
         return true;
     }
 
-    // <FactorLog> → Not <FactorLog> | <RelExpr>
     public bool FactorLog()
     {
         if (_p != null && _p.Type == TokenType.Not)
@@ -218,7 +196,6 @@ public class Parser
         }
     }
 
-    // <RelExpr> → <Operand> [ Rel <Operand> ]
     public bool RelExpr()
     {
         if (!Operand())
@@ -232,7 +209,6 @@ public class Parser
         return true;
     }
 
-    // <Operand> → Identifier | Constant
     public bool Operand()
     {
         if (_p == null || (_p.Type != TokenType.Identifier && _p.Type != TokenType.Constant))
