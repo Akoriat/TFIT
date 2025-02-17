@@ -5,9 +5,6 @@ using Lab4.Models;
 
 namespace Lab4.Services
 {
-    /// <summary>
-    /// Результат шага выполнения – для отображения в DataGrid.
-    /// </summary>
     public class StepResult
     {
         public int Step { get; set; }

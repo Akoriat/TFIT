@@ -82,18 +82,14 @@ public class Parser
     }
 
     public bool Statement()
-    {
+    { 
         if (_p == null)
         {
             Error("Ожидается оператор", 0);
             return false;
         }
 
-        if (_p.Type == TokenType.Do)
-        {
-            return DoUntil();
-        }
-        else if (_p.Type == TokenType.Identifier)
+        if (_p.Type == TokenType.Identifier)
         {
             _p = _p.Next;
             if (_p == null || _p.Type != TokenType.As)

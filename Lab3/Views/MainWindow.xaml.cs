@@ -10,7 +10,7 @@ namespace Lab3.Views
         public MainWindow()
         {
             InitializeComponent();
-            InputTextBox.Text = "do until a < 10 and not b == 5 output a; do until a < 10 and not b == 5 output a; loop";
+            InputTextBox.Text = "do until a < 10 and not b == 5 output a loop";
         }
 
         private void ParseButton_Click(object sender, RoutedEventArgs e)

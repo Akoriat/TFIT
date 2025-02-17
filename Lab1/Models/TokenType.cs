@@ -13,10 +13,7 @@
         Loop,
         Rel,
         Ao,
-        Mul,
-        Div,
         As,
         Del,
-        EndOfFile,
     }
 }

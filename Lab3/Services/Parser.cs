@@ -154,11 +154,7 @@ namespace Lab3.Services
                 Error("Ожидается оператор", 0);
                 return false;
             }
-            if (_p.Type == TokenType.Do)
-            {
-                return DoUntil();
-            }
-            else if (_p.Type == TokenType.Identifier)
+            if (_p.Type == TokenType.Identifier)
             {
                 string varName = _p.Lexeme;
                 WriteVar(varName);

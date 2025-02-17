@@ -128,11 +128,11 @@ public class Lexer
                         pos++;
                         break;
                     case '*':
-                        AddToken(TokenType.Mul, "*", pos);
+                        AddToken(TokenType.Ao, "*", pos);
                         pos++;
                         break;
                     case '/':
-                        AddToken(TokenType.Div, "/", pos);
+                        AddToken(TokenType.Ao, "/", pos);
                         pos++;
                         break;
                     case ';':
@@ -147,7 +147,6 @@ public class Lexer
             }
         }
 
-        AddToken(TokenType.EndOfFile, string.Empty, pos);
         return _pFirst;
     }
 }
